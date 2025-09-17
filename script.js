@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeProgressPath();
     initializePointsSystem(); // 初始化积分系统
     initializeMultiGoalSystem(); // 初始化多目标系统
+    updateTimeStats(); // 初始化时间统计
     
     // 设置今天的日期为默认截止日期
     const today = new Date();
@@ -286,12 +287,18 @@ function addTask() {
         id: Date.now(),
         text: taskText,
         completed: false,
-        date: new Date().toDateString()
+        date: new Date().toDateString(),
+        startTime: null,
+        endTime: null,
+        totalTime: 0,
+        isRunning: false,
+        sessions: [] // 记录多次开始/停止的时间段
     };
     
     tasks.push(task);
     saveTasks();
     renderTasks();
+    updateTimeStats();
     taskInput.value = '';
 }
 
@@ -305,10 +312,20 @@ function renderTasks() {
         const li = document.createElement('li');
         li.className = `task-item ${task.completed ? 'completed' : ''}`;
         
+        const timeDisplay = formatTime(task.totalTime || 0);
+        const isRunning = task.isRunning || false;
+        
         li.innerHTML = `
             <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} 
                    onchange="toggleTask(${task.id})">
             <span class="task-text">${task.text}</span>
+            <div class="task-time-controls">
+                <div class="task-time-display">${timeDisplay}</div>
+                <button class="time-btn ${isRunning ? 'stop' : 'start'}" 
+                        onclick="${isRunning ? 'stopTask' : 'startTask'}(${task.id})">
+                    ${isRunning ? '⏸️' : '▶️'}
+                </button>
+            </div>
             <button class="task-delete" onclick="deleteTask(${task.id})">删除</button>
         `;
         
@@ -346,6 +363,131 @@ function saveTasks() {
 
 function loadTasks() {
     renderTasks();
+}
+
+// 时间记录相关功能
+function formatTime(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+        return `${hours}h ${minutes}m ${secs}s`;
+    } else if (minutes > 0) {
+        return `${minutes}m ${secs}s`;
+    } else {
+        return `${secs}s`;
+    }
+}
+
+function startTask(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || task.completed) return;
+    
+    // 停止其他正在运行的任务
+    tasks.forEach(t => {
+        if (t.isRunning && t.id !== taskId) {
+            stopTask(t.id);
+        }
+    });
+    
+    task.isRunning = true;
+    task.startTime = Date.now();
+    
+    saveTasks();
+    renderTasks();
+    updateTimeStats();
+}
+
+function stopTask(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.isRunning) return;
+    
+    const endTime = Date.now();
+    const sessionTime = Math.floor((endTime - task.startTime) / 1000);
+    
+    task.isRunning = false;
+    task.endTime = endTime;
+    task.totalTime = (task.totalTime || 0) + sessionTime;
+    
+    // 记录时间段
+    if (!task.sessions) task.sessions = [];
+    task.sessions.push({
+        start: task.startTime,
+        end: endTime,
+        duration: sessionTime
+    });
+    
+    saveTasks();
+    renderTasks();
+    updateTimeStats();
+}
+
+function updateTimeStats() {
+    const today = new Date().toDateString();
+    const todayTasks = tasks.filter(task => task.date === today);
+    
+    const totalTime = todayTasks.reduce((sum, task) => sum + (task.totalTime || 0), 0);
+    const completedTasks = todayTasks.filter(task => task.completed).length;
+    const avgTime = completedTasks > 0 ? Math.floor(totalTime / completedTasks) : 0;
+    
+    // 计算本周总计
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    const weekTasks = tasks.filter(task => {
+        const taskDate = new Date(task.date);
+        return taskDate >= weekStart;
+    });
+    const weekTotal = weekTasks.reduce((sum, task) => sum + (task.totalTime || 0), 0);
+    
+    // 更新统计显示
+    const todayTimeEl = document.getElementById('todayTime');
+    const completedCountEl = document.getElementById('completedCount');
+    const avgTimeEl = document.getElementById('avgTime');
+    const weekTotalEl = document.getElementById('weekTotal');
+    
+    if (todayTimeEl) todayTimeEl.textContent = formatTime(totalTime);
+    if (completedCountEl) completedCountEl.textContent = completedTasks;
+    if (avgTimeEl) avgTimeEl.textContent = formatTime(avgTime);
+    if (weekTotalEl) weekTotalEl.textContent = formatTime(weekTotal);
+    
+    // 更新图表
+    updateTimeChart(todayTasks);
+}
+
+function updateTimeChart(todayTasks) {
+    const canvas = document.getElementById('timeChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // 清空画布
+    ctx.clearRect(0, 0, width, height);
+    
+    if (todayTasks.length === 0) return;
+    
+    // 绘制简单的条形图
+    const maxTime = Math.max(...todayTasks.map(task => task.totalTime || 0));
+    if (maxTime === 0) return;
+    
+    const barWidth = width / todayTasks.length;
+    const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336'];
+    
+    todayTasks.forEach((task, index) => {
+        const barHeight = (task.totalTime || 0) / maxTime * (height - 20);
+        const x = index * barWidth;
+        const y = height - barHeight - 10;
+        
+        ctx.fillStyle = colors[index % colors.length];
+        ctx.fillRect(x + 5, y, barWidth - 10, barHeight);
+        
+        // 绘制任务名称（简化）
+        ctx.fillStyle = '#333';
+        ctx.font = '10px Arial';
+        ctx.fillText(task.text.substring(0, 8) + '...', x + 5, height - 2);
+    });
 }
 
 // 打卡功能
@@ -1035,6 +1177,7 @@ function updatePointsDisplay() {
     if (pointsElement) {
         pointsElement.textContent = userPoints;
     }
+    updateForest(); // 更新树林
 }
 
 function showPointsNotification(points, reason) {
@@ -2104,6 +2247,139 @@ function updateVisitorCount() {
 // 添加标签切换事件监听
 document.querySelectorAll('.auth-tab').forEach(tab => {
     tab.addEventListener('click', function() {
-        switchAuthTab(this.getAttribute('data-tab'));
+        switchAuthTab(this.dataset.tab);
     });
+});
+
+// 树林系统
+function initializeForestSystem() {
+    updateForest();
+}
+
+// 根据积分更新树林
+function updateForest() {
+    const forestContainer = document.getElementById('forestContainer');
+    if (!forestContainer) return;
+    
+    // 清空现有树木
+    forestContainer.innerHTML = '';
+    
+    // 根据积分计算树木数量和大小
+    const treeCount = Math.min(Math.floor(userPoints / 10), 20); // 每10积分一棵树，最多20棵
+    const positions = generateTreePositions(treeCount);
+    
+    positions.forEach((pos, index) => {
+        const treeSize = calculateTreeSize(index, userPoints);
+        const tree = createTree(pos.x, pos.y, treeSize, index);
+        forestContainer.appendChild(tree);
+    });
+}
+
+// 生成树木位置（避免与路径重叠）
+function generateTreePositions(count) {
+    const positions = [];
+    const svgWidth = 800;
+    const svgHeight = 300;
+    
+    for (let i = 0; i < count; i++) {
+        let x, y;
+        let attempts = 0;
+        
+        do {
+            x = Math.random() * (svgWidth - 100) + 50;
+            y = Math.random() * (svgHeight - 150) + 50;
+            attempts++;
+        } while (isNearPath(x, y) && attempts < 50);
+        
+        positions.push({ x, y });
+    }
+    
+    return positions;
+}
+
+// 检查是否靠近路径
+function isNearPath(x, y) {
+    // 简化的路径检测，避免树木与主路径重叠
+    const pathY = calculatePathY(x);
+    return Math.abs(y - pathY) < 60;
+}
+
+// 计算树木大小（基于积分和索引）
+function calculateTreeSize(index, points) {
+    const baseSize = 0.3;
+    const maxSize = 1.2;
+    const pointsPerTree = 10;
+    const treePoints = Math.min(points - (index * pointsPerTree), pointsPerTree * 3);
+    const sizeMultiplier = baseSize + (treePoints / (pointsPerTree * 3)) * (maxSize - baseSize);
+    return Math.max(sizeMultiplier, baseSize);
+}
+
+// 创建树木SVG元素
+function createTree(x, y, size, index) {
+    const treeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    treeGroup.setAttribute('transform', `translate(${x}, ${y}) scale(${size})`);
+    treeGroup.setAttribute('class', 'forest-tree');
+    
+    // 树干
+    const trunk = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    trunk.setAttribute('x', '-2');
+    trunk.setAttribute('y', '-5');
+    trunk.setAttribute('width', '4');
+    trunk.setAttribute('height', '15');
+    trunk.setAttribute('fill', '#8B4513');
+    trunk.setAttribute('rx', '1');
+    
+    // 树冠（多层）
+    const crown1 = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    crown1.setAttribute('cx', '0');
+    crown1.setAttribute('cy', '-15');
+    crown1.setAttribute('rx', '12');
+    crown1.setAttribute('ry', '10');
+    crown1.setAttribute('fill', getTreeColor(size));
+    
+    const crown2 = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    crown2.setAttribute('cx', '0');
+    crown2.setAttribute('cy', '-20');
+    crown2.setAttribute('rx', '8');
+    crown2.setAttribute('ry', '8');
+    crown2.setAttribute('fill', getTreeColor(size, true));
+    
+    // 添加轻微的摇摆动画
+    const animationDelay = index * 0.5;
+    treeGroup.innerHTML = `
+        <animateTransform attributeName="transform" type="rotate" 
+                        values="-2 0 0;2 0 0;-2 0 0" 
+                        dur="${3 + Math.random() * 2}s" 
+                        repeatCount="indefinite"
+                        begin="${animationDelay}s"/>
+    `;
+    
+    treeGroup.appendChild(trunk);
+    treeGroup.appendChild(crown1);
+    treeGroup.appendChild(crown2);
+    
+    return treeGroup;
+}
+
+// 根据树木大小获取颜色
+function getTreeColor(size, isTop = false) {
+    const colors = {
+        small: isTop ? '#228B22' : '#32CD32',
+        medium: isTop ? '#006400' : '#228B22', 
+        large: isTop ? '#004d00' : '#006400'
+    };
+    
+    if (size < 0.6) return colors.small;
+    if (size < 1.0) return colors.medium;
+    return colors.large;
+}
+
+// 积分更新时会自动调用树林更新（已在上面的updatePointsDisplay函数中实现）
+
+// 在页面加载时初始化树林
+document.addEventListener('DOMContentLoaded', function() {
+    // 延迟初始化树林，确保其他系统已加载
+    setTimeout(() => {
+        initializeForestSystem();
+    }, 1000);
 });
