@@ -1475,7 +1475,7 @@ function openBackgroundShop() {
     renderBackgroundGrid();
     
     // 显示弹窗
-    modal.style.display = 'block';
+    modal.classList.add('show');
     
     // 初始化商店标签事件
     initializeShopTabs();
@@ -1487,7 +1487,7 @@ function openBackgroundShop() {
 // 关闭背景商店
 function closeBackgroundShop() {
     const modal = document.getElementById('backgroundShopModal');
-    modal.style.display = 'none';
+    modal.classList.remove('show');
 }
 
 // 初始化商店标签
