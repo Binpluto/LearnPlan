@@ -68,6 +68,7 @@
                         <span class="points-value" id="userPoints">0</span>
                     </div>
                     <button class="referral-btn" onclick="addReferralPoints()" data-zh="推荐好友" data-en="Refer Friend">推荐好友</button>
+                    <button class="shop-btn" id="backgroundShopBtn" onclick="openBackgroundShop()" data-zh="背景商店" data-en="Background Shop">🎨 背景商店</button>
                 </div>
             </div>
         </header>
@@ -311,26 +312,123 @@
                 <polygon points="50,120 51,123 54,123 52,125 53,128 50,126 47,128 48,125 46,123 49,123" fill="#ffd700"/>
             </g>
             
+            <!-- 装饰性瀑布 -->
+        <g id="decorativeWaterfall">
+            <!-- 瀑布背景 -->
+            <g transform="translate(50,150)">
+                <!-- 瀑布主体 -->
+                <path d="M0,0 Q5,20 0,40 Q-3,60 2,80 Q6,100 0,120 Q-4,140 3,160" 
+                      stroke="#81D4FA" stroke-width="8" fill="none" opacity="0.6">
+                    <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2s" repeatCount="indefinite"/>
+                </path>
+                
+                <!-- 瀑布水花效果 -->
+                <g opacity="0.5">
+                    <circle cx="-2" cy="40" r="1.5" fill="#B3E5FC">
+                        <animate attributeName="cy" values="40;45;40" dur="1.5s" repeatCount="indefinite"/>
+                        <animate attributeName="opacity" values="0.8;0.3;0.8" dur="1.5s" repeatCount="indefinite"/>
+                    </circle>
+                    <circle cx="3" cy="80" r="1" fill="#E1F5FE">
+                        <animate attributeName="cy" values="80;85;80" dur="2s" repeatCount="indefinite"/>
+                        <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite"/>
+                    </circle>
+                    <circle cx="-1" cy="120" r="1.2" fill="#B3E5FC">
+                        <animate attributeName="cy" values="120;125;120" dur="1.8s" repeatCount="indefinite"/>
+                        <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1.8s" repeatCount="indefinite"/>
+                    </circle>
+                </g>
+                
+                <!-- 瀑布底部水池 -->
+                <ellipse cx="0" cy="165" rx="12" ry="4" fill="#81D4FA" opacity="0.4">
+                    <animate attributeName="rx" values="12;14;12" dur="3s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0.4;0.6;0.4" dur="3s" repeatCount="indefinite"/>
+                </ellipse>
+            </g>
+        </g>
+        
+        <!-- 装饰性小鸟群 -->
+        <g id="decorativeBirds">
+                <!-- 小鸟1 - 左上角 -->
+                <g transform="translate(100,80)">
+                    <ellipse cx="0" cy="0" rx="8" ry="5" fill="#8BC34A" opacity="0.8">
+                        <animateTransform attributeName="transform" type="translate" values="0,0; 2,-1; 0,0" dur="3s" repeatCount="indefinite"/>
+                    </ellipse>
+                    <circle cx="-3" cy="-1" r="3" fill="#689F38"/>
+                    <polygon points="-8,0 -12,-2 -12,2" fill="#8BC34A"/>
+                    <circle cx="-5" cy="-2" r="0.8" fill="#333"/>
+                    <polygon points="3,1 8,0 8,3" fill="#8BC34A" opacity="0.7">
+                        <animateTransform attributeName="transform" type="rotate" values="0 5 1.5; -15 5 1.5; 0 5 1.5" dur="0.8s" repeatCount="indefinite"/>
+                    </polygon>
+                </g>
+                
+                <!-- 小鸟2 - 右上角 -->
+                <g transform="translate(700,120)">
+                    <ellipse cx="0" cy="0" rx="6" ry="4" fill="#4CAF50" opacity="0.7">
+                        <animateTransform attributeName="transform" type="translate" values="0,0; -1,1; 0,0" dur="4s" repeatCount="indefinite"/>
+                    </ellipse>
+                    <circle cx="-2" cy="-1" r="2.5" fill="#388E3C"/>
+                    <polygon points="-6,0 -9,-1 -9,1" fill="#4CAF50"/>
+                    <circle cx="-4" cy="-1.5" r="0.6" fill="#333"/>
+                    <polygon points="2,0.5 6,0 6,2" fill="#4CAF50" opacity="0.6">
+                        <animateTransform attributeName="transform" type="rotate" values="0 4 1; -20 4 1; 0 4 1" dur="1s" repeatCount="indefinite"/>
+                    </polygon>
+                </g>
+                
+                <!-- 小鸟3 - 中间飞行 -->
+                <g>
+                    <ellipse cx="0" cy="0" rx="5" ry="3" fill="#66BB6A" opacity="0.6">
+                        <animateTransform attributeName="transform" type="translate" values="200,200; 600,180; 200,200" dur="15s" repeatCount="indefinite"/>
+                    </ellipse>
+                    <circle cx="-2" cy="-0.5" r="2" fill="#4CAF50">
+                        <animateTransform attributeName="transform" type="translate" values="200,200; 600,180; 200,200" dur="15s" repeatCount="indefinite"/>
+                    </circle>
+                    <polygon points="-5,0 -7,-1 -7,1" fill="#66BB6A">
+                        <animateTransform attributeName="transform" type="translate" values="200,200; 600,180; 200,200" dur="15s" repeatCount="indefinite"/>
+                    </polygon>
+                    <circle cx="-3" cy="-1" r="0.5" fill="#333">
+                        <animateTransform attributeName="transform" type="translate" values="200,200; 600,180; 200,200" dur="15s" repeatCount="indefinite"/>
+                    </circle>
+                    <polygon points="1,0 4,-0.5 4,1" fill="#66BB6A" opacity="0.5">
+                        <animateTransform attributeName="transform" type="translate" values="200,200; 600,180; 200,200" dur="15s" repeatCount="indefinite"/>
+                        <animateTransform attributeName="transform" type="rotate" values="0 2.5 0.25; -25 2.5 0.25; 0 2.5 0.25" dur="0.6s" repeatCount="indefinite" additive="sum"/>
+                    </polygon>
+                </g>
+            </g>
+            
             <!-- 动态树林容器 -->
             <g id="forestContainer" opacity="0.8">
                 <!-- 树木将通过JavaScript动态添加 -->
             </g>
             
-            <!-- 小路背景层 -->
-            <path d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
-                  stroke="#8d6e63" stroke-width="44" fill="none" opacity="0.4" filter="url(#shadow)"/>
-            <path d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
-                  stroke="#a1887f" stroke-width="40" fill="none" opacity="0.6"/>
-            <path id="roadBackground" d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
-                  stroke="#f5f5f5" stroke-width="36" fill="none" stroke-linecap="round"/>
+            <!-- 小木桥背景层 -->
+            <g id="bridgeBackground">
+                <!-- 桥梁阴影 -->
+                <path d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
+                      stroke="rgba(0,0,0,0.3)" stroke-width="48" fill="none" opacity="0.4" filter="url(#shadow)"/>
+                
+                <!-- 桥梁主体 -->
+                <path d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
+                      stroke="#8D6E63" stroke-width="40" fill="none" stroke-linecap="round"/>
+                
+                <!-- 桥面 -->
+                <path id="roadBackground" d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
+                      stroke="#D7CCC8" stroke-width="32" fill="none" stroke-linecap="round"/>
+                
+                <!-- 木板纹理 -->
+                <g id="woodPlanks">
+                    <!-- 通过JavaScript动态添加木板纹理 -->
+                </g>
+            </g>
                             
-                            <!-- 主路径 -->
+            <!-- 主桥梁路径 -->
             <path id="mainPath" d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
-                  stroke="url(#pathGradient)" stroke-width="20" fill="none" stroke-linecap="round" filter="url(#glow)"/>
+                  stroke="url(#pathGradient)" stroke-width="28" fill="none" stroke-linecap="round" filter="url(#glow)"/>
                   
-            <!-- 路径边框 -->
+            <!-- 桥梁护栏 -->
             <path d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
-                  stroke="#ffffff" stroke-width="24" fill="none" opacity="0.3" stroke-linecap="round"/>
+                  stroke="#A1887F" stroke-width="4" fill="none" opacity="0.8" stroke-linecap="round" transform="translate(0,-16)"/>
+            <path d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
+                  stroke="#A1887F" stroke-width="4" fill="none" opacity="0.8" stroke-linecap="round" transform="translate(0,16)"/>
                             
                             <!-- 进度路径 -->
             <path id="progressPath" d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
@@ -449,6 +547,64 @@
                 </div>
             </section>
         </main>
+    </div>
+
+    <!-- 推荐好友弹窗 -->
+    <div id="referralModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeReferralModal()">&times;</span>
+            <h3 data-zh="推荐好友" data-en="Refer Friends">推荐好友</h3>
+            <div id="referralContent"></div>
+        </div>
+    </div>
+
+    <!-- 推荐欢迎弹窗 -->
+    <div id="welcomeModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeWelcome()">&times;</span>
+            <h3 data-zh="欢迎" data-en="Welcome">欢迎</h3>
+            <div id="welcomeContent"></div>
+        </div>
+    </div>
+
+    <!-- 背景商店弹窗 -->
+    <div id="backgroundShopModal" class="modal" style="display: none;">
+        <div class="modal-content shop-modal">
+            <span class="close" onclick="closeBackgroundShop()">&times;</span>
+            <h3 data-zh="背景商店" data-en="Background Shop">背景商店</h3>
+            <div class="shop-header">
+                <div class="user-points">
+                    <span data-zh="当前积分：" data-en="Current Points: ">当前积分：</span>
+                    <span id="shopPointsDisplay">0</span>
+                    <span class="points-icon">⭐</span>
+                </div>
+            </div>
+            <div class="shop-content">
+                <div class="shop-tabs">
+                    <button class="shop-tab active" data-tab="preset" data-zh="预设背景" data-en="Preset Backgrounds">预设背景</button>
+                    <button class="shop-tab" data-tab="custom" data-zh="自定义背景" data-en="Custom Background">自定义背景</button>
+                </div>
+                <div class="shop-tab-content">
+                    <div id="presetBackgrounds" class="tab-panel active">
+                        <div class="background-grid" id="backgroundGrid">
+                            <!-- 背景选项将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                    <div id="customBackground" class="tab-panel">
+                        <div class="custom-upload-area">
+                            <div class="upload-zone" id="uploadZone">
+                                <div class="upload-icon">📁</div>
+                                <p data-zh="点击或拖拽上传自定义背景" data-en="Click or drag to upload custom background">点击或拖拽上传自定义背景</p>
+                                <input type="file" id="backgroundUpload" accept="image/*" style="display: none;">
+                            </div>
+                            <div class="upload-tips">
+                                <p data-zh="支持 JPG、PNG 格式，建议尺寸 1920x1080" data-en="Supports JPG, PNG formats, recommended size 1920x1080">支持 JPG、PNG 格式，建议尺寸 1920x1080</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 底部访问量统计气泡 -->

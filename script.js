@@ -102,6 +102,13 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeMultiGoalSystem(); // 初始化多目标系统
     updateTimeStats(); // 初始化时间统计
     
+    // 初始化推荐系统
+    checkReferralCode();
+    processReferralReward();
+    
+    // 初始化背景系统
+    initializeBackgroundSystem();
+    
     // 设置今天的日期为默认截止日期
     const today = new Date();
     const tomorrow = new Date(today);
@@ -1008,34 +1015,73 @@ function createMilestoneMarker(milestone, index, x, y) {
     border.setAttribute('stroke', 'rgba(255,255,255,0.5)');
     border.setAttribute('stroke-width', '1');
     
-    // 里程碑图标
+    // 小树图标
     const icon = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    
+    // 树干
+    const trunk = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    trunk.setAttribute('x', '-19');
+    trunk.setAttribute('y', '-4');
+    trunk.setAttribute('width', '2');
+    trunk.setAttribute('height', '6');
+    trunk.setAttribute('fill', milestone.completed ? '#8D6E63' : '#A1887F');
+    trunk.setAttribute('rx', '1');
+    icon.appendChild(trunk);
+    
     if (milestone.completed) {
-        // 完成图标（勾号）
-        const checkPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        checkPath.setAttribute('d', 'M -18,-8 L -15,-5 L -12,-8');
-        checkPath.setAttribute('stroke', '#fff');
-        checkPath.setAttribute('stroke-width', '2');
-        checkPath.setAttribute('fill', 'none');
-        checkPath.setAttribute('stroke-linecap', 'round');
-        icon.appendChild(checkPath);
+        // 完成状态：茂密的大树
+        // 树冠（三层）
+        const crown1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        crown1.setAttribute('cx', '-18');
+        crown1.setAttribute('cy', '-8');
+        crown1.setAttribute('r', '4');
+        crown1.setAttribute('fill', '#4CAF50');
+        crown1.setAttribute('opacity', '0.9');
+        icon.appendChild(crown1);
+        
+        const crown2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        crown2.setAttribute('cx', '-16');
+        crown2.setAttribute('cy', '-6');
+        crown2.setAttribute('r', '3');
+        crown2.setAttribute('fill', '#66BB6A');
+        crown2.setAttribute('opacity', '0.8');
+        icon.appendChild(crown2);
+        
+        const crown3 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        crown3.setAttribute('cx', '-20');
+        crown3.setAttribute('cy', '-6');
+        crown3.setAttribute('r', '2.5');
+        crown3.setAttribute('fill', '#81C784');
+        crown3.setAttribute('opacity', '0.7');
+        icon.appendChild(crown3);
     } else {
-        // 未完成图标（旗帜）
-        const flagPole = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        flagPole.setAttribute('x1', '-18');
-        flagPole.setAttribute('y1', '-10');
-        flagPole.setAttribute('x2', '-18');
-        flagPole.setAttribute('y2', '-2');
-        flagPole.setAttribute('stroke', '#fff');
-        flagPole.setAttribute('stroke-width', '1.5');
+        // 未完成状态：小树苗
+        const sapling = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        sapling.setAttribute('cx', '-18');
+        sapling.setAttribute('cy', '-7');
+        sapling.setAttribute('r', '2.5');
+        sapling.setAttribute('fill', '#8BC34A');
+        sapling.setAttribute('opacity', '0.8');
+        icon.appendChild(sapling);
         
-        const flag = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-        flag.setAttribute('points', '-18,-10 -12,-8 -18,-6');
-        flag.setAttribute('fill', '#fff');
-        flag.setAttribute('opacity', '0.9');
+        // 小叶子
+        const leaf1 = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+        leaf1.setAttribute('cx', '-16');
+        leaf1.setAttribute('cy', '-8');
+        leaf1.setAttribute('rx', '1');
+        leaf1.setAttribute('ry', '1.5');
+        leaf1.setAttribute('fill', '#AED581');
+        leaf1.setAttribute('opacity', '0.7');
+        icon.appendChild(leaf1);
         
-        icon.appendChild(flagPole);
-        icon.appendChild(flag);
+        const leaf2 = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+        leaf2.setAttribute('cx', '-20');
+        leaf2.setAttribute('cy', '-6');
+        leaf2.setAttribute('rx', '1');
+        leaf2.setAttribute('ry', '1.5');
+        leaf2.setAttribute('fill', '#AED581');
+        leaf2.setAttribute('opacity', '0.7');
+        icon.appendChild(leaf2);
     }
     
     // 标牌文字
@@ -1156,6 +1202,10 @@ function initializePointsSystem() {
 function awardPoints(points, reason) {
     userPoints += points;
     localStorage.setItem('userPoints', userPoints.toString());
+    
+    // 更新累计积分记录
+    updateTotalEarnedPoints(points);
+    
     updatePointsDisplay();
     showPointsNotification(points, reason);
 }
@@ -1204,10 +1254,496 @@ function showPointsNotification(points, reason) {
     }, 3000);
 }
 
+// 生成用户唯一ID
+function getUserId() {
+    let userId = localStorage.getItem('userId');
+    if (!userId) {
+        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('userId', userId);
+    }
+    return userId;
+}
+
+// 生成邀请链接
+function generateReferralLink() {
+    const userId = getUserId();
+    const baseUrl = window.location.origin + window.location.pathname;
+    return `${baseUrl}?ref=${userId}`;
+}
+
+// 推荐好友功能
+function shareReferralLink() {
+    const referralLink = generateReferralLink();
+    
+    // 创建分享弹窗
+    const modal = document.createElement('div');
+    modal.className = 'referral-modal';
+    modal.innerHTML = `
+        <div class="referral-modal-content">
+            <div class="referral-modal-header">
+                <h3>邀请好友一起学习</h3>
+                <button class="close-modal" onclick="closeReferralModal()">&times;</button>
+            </div>
+            <div class="referral-modal-body">
+                <p>分享这个链接给好友，好友注册成功后你将获得 <strong>${POINT_RULES.REFERRAL} 积分</strong> 奖励！</p>
+                <div class="referral-link-container">
+                    <input type="text" id="referralLinkInput" value="${referralLink}" readonly>
+                    <button onclick="copyReferralLink()" class="copy-btn">复制链接</button>
+                </div>
+                <div class="referral-stats">
+                    <p>已成功推荐: <span class="referral-count">${referralCount}</span> 人</p>
+                    <p>累计获得: <span class="referral-points">${referralCount * POINT_RULES.REFERRAL}</span> 积分</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 添加点击外部关闭功能
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeReferralModal();
+        }
+    });
+}
+
+// 复制邀请链接
+function copyReferralLink() {
+    const input = document.getElementById('referralLinkInput');
+    input.select();
+    document.execCommand('copy');
+    
+    // 显示复制成功提示
+    const copyBtn = document.querySelector('.copy-btn');
+    const originalText = copyBtn.textContent;
+    copyBtn.textContent = '已复制!';
+    copyBtn.style.background = '#4CAF50';
+    
+    setTimeout(() => {
+        copyBtn.textContent = originalText;
+        copyBtn.style.background = '';
+    }, 2000);
+}
+
+// 关闭推荐弹窗
+function closeReferralModal() {
+    const modal = document.querySelector('.referral-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// 检查是否通过邀请链接访问
+function checkReferralCode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const referralCode = urlParams.get('ref');
+    
+    if (referralCode && !localStorage.getItem('hasRegistered')) {
+        localStorage.setItem('referralCode', referralCode);
+        // 显示欢迎消息
+        showReferralWelcome();
+    }
+}
+
+// 显示推荐欢迎消息
+function showReferralWelcome() {
+    const welcomeDiv = document.createElement('div');
+    welcomeDiv.className = 'referral-welcome';
+    welcomeDiv.innerHTML = `
+        <div class="welcome-content">
+            <h3>🎉 欢迎通过好友邀请加入！</h3>
+            <p>完成注册后，你和推荐人都将获得积分奖励！</p>
+            <button onclick="closeWelcome()" class="welcome-close">知道了</button>
+        </div>
+    `;
+    
+    document.body.appendChild(welcomeDiv);
+    
+    // 3秒后自动关闭
+    setTimeout(() => {
+        closeWelcome();
+    }, 5000);
+}
+
+// 关闭欢迎消息
+function closeWelcome() {
+    const welcome = document.querySelector('.referral-welcome');
+    if (welcome) {
+        welcome.remove();
+    }
+}
+
+// 处理新用户注册奖励
+function processReferralReward() {
+    const referralCode = localStorage.getItem('referralCode');
+    if (referralCode && !localStorage.getItem('hasRegistered')) {
+        // 标记用户已注册
+        localStorage.setItem('hasRegistered', 'true');
+        
+        // 给推荐人增加积分（这里模拟，实际应该通过服务器处理）
+        // 在实际应用中，这应该通过API调用来处理
+        
+        // 给新用户奖励
+        awardPoints(POINT_RULES.REGISTRATION, '新用户注册奖励');
+        
+        // 显示注册成功消息
+        showPointsNotification(POINT_RULES.REGISTRATION, '注册成功！欢迎加入学习计划！');
+        
+        // 清除推荐码
+        localStorage.removeItem('referralCode');
+    }
+}
+
+// 旧的推荐好友函数（保持兼容性）
 function addReferralPoints() {
-    referralCount++;
-    localStorage.setItem('referralCount', referralCount.toString());
-    awardPoints(POINT_RULES.REFERRAL, '推荐好友奖励');
+    shareReferralLink();
+}
+
+// 背景商店系统
+const BACKGROUND_THEMES = {
+    default: {
+        name: '默认森林',
+        price: 0,
+        preview: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        unlocked: true,
+        description: '经典的森林主题背景'
+    },
+    ocean: {
+        name: '深海蓝调',
+        price: 500,
+        preview: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+        unlocked: false,
+        description: '宁静的深海主题'
+    },
+    sunset: {
+        name: '日落黄昏',
+        price: 800,
+        preview: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%)',
+        unlocked: false,
+        description: '温暖的日落色彩'
+    },
+    galaxy: {
+        name: '星河银河',
+        price: 1000,
+        preview: 'linear-gradient(135deg, #434343 0%, black 100%)',
+        unlocked: false,
+        description: '神秘的银河系主题'
+    },
+    spring: {
+        name: '春日樱花',
+        price: 600,
+        preview: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+        unlocked: false,
+        description: '清新的春日樱花'
+    },
+    winter: {
+        name: '冬日雪景',
+        price: 700,
+        preview: 'linear-gradient(135deg, #e6ddd4 0%, #d5def5 100%)',
+        unlocked: false,
+        description: '纯净的冬日雪景'
+    },
+    aurora: {
+        name: '极光绚烂',
+        price: 1200,
+        preview: 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)',
+        unlocked: false,
+        description: '绚烂的极光色彩'
+    },
+    desert: {
+        name: '沙漠黄昏',
+        price: 900,
+        preview: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+        unlocked: false,
+        description: '壮丽的沙漠黄昏'
+    }
+};
+
+let currentBackground = localStorage.getItem('currentBackground') || 'default';
+let ownedBackgrounds = JSON.parse(localStorage.getItem('ownedBackgrounds')) || ['default'];
+
+// 打开背景商店
+function openBackgroundShop() {
+    const modal = document.getElementById('backgroundShopModal');
+    const pointsDisplay = document.getElementById('shopPointsDisplay');
+    
+    // 更新积分显示
+    pointsDisplay.textContent = userPoints;
+    
+    // 渲染背景选项
+    renderBackgroundGrid();
+    
+    // 显示弹窗
+    modal.style.display = 'block';
+    
+    // 初始化商店标签事件
+    initializeShopTabs();
+    
+    // 初始化自定义上传功能
+    initializeCustomUpload();
+}
+
+// 关闭背景商店
+function closeBackgroundShop() {
+    const modal = document.getElementById('backgroundShopModal');
+    modal.style.display = 'none';
+}
+
+// 初始化商店标签
+function initializeShopTabs() {
+    const tabs = document.querySelectorAll('.shop-tab');
+    const panels = document.querySelectorAll('.tab-panel');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetTab = tab.dataset.tab;
+            
+            // 切换标签状态
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // 切换面板显示
+            panels.forEach(panel => {
+                panel.classList.remove('active');
+                if (panel.id === targetTab + 'Backgrounds' || panel.id === targetTab + 'Background') {
+                    panel.classList.add('active');
+                }
+            });
+        });
+    });
+}
+
+// 渲染背景网格
+function renderBackgroundGrid() {
+    const grid = document.getElementById('backgroundGrid');
+    grid.innerHTML = '';
+    
+    Object.entries(BACKGROUND_THEMES).forEach(([key, theme]) => {
+        const item = document.createElement('div');
+        item.className = 'background-item';
+        
+        // 检查解锁状态
+        const isOwned = ownedBackgrounds.includes(key);
+        const totalEarned = getTotalEarnedPoints();
+        const needsUnlock = theme.price >= 1000 && totalEarned < 1000;
+        const isLocked = !isOwned && (userPoints < theme.price || needsUnlock);
+        const isCurrent = currentBackground === key;
+        
+        if (isLocked) item.classList.add('locked');
+        if (isCurrent) item.classList.add('selected');
+        
+        item.innerHTML = `
+            <div class="background-preview" style="background: ${theme.preview}"></div>
+            <div class="background-info">
+                <div class="background-name">${theme.name}</div>
+                <div class="background-price">
+                    ${isOwned ? (isCurrent ? '使用中' : '已拥有') : 
+                      needsUnlock ? `需要1000积分解锁` : `${theme.price} ⭐`}
+                </div>
+            </div>
+            <div class="background-status ${
+                isCurrent ? 'status-current' : isOwned ? 'status-owned' : 'status-locked'
+            }">
+                ${isCurrent ? '当前' : isOwned ? '已拥有' : '锁定'}
+            </div>
+            ${isLocked ? '<div class="lock-overlay">🔒</div>' : ''}
+        `;
+        
+        // 添加点击事件
+        if (!isLocked) {
+            item.addEventListener('click', () => {
+                if (isOwned) {
+                    // 切换背景
+                    switchBackground(key);
+                } else {
+                    // 购买背景
+                    purchaseBackground(key, theme);
+                }
+            });
+        }
+        
+        grid.appendChild(item);
+    });
+}
+
+// 购买背景
+function purchaseBackground(key, theme) {
+    // 检查是否达到1000积分解锁条件
+    if (theme.price >= 1000) {
+        const totalEarnedPoints = getTotalEarnedPoints();
+        if (totalEarnedPoints < 1000) {
+            alert(`需要累计获得1000积分才能解锁高级背景！\n当前累计积分：${totalEarnedPoints}\n还需要：${1000 - totalEarnedPoints} 积分`);
+            return;
+        }
+    }
+    
+    if (userPoints >= theme.price) {
+        // 扣除积分
+        userPoints -= theme.price;
+        localStorage.setItem('userPoints', userPoints);
+        
+        // 添加到已拥有列表
+        ownedBackgrounds.push(key);
+        localStorage.setItem('ownedBackgrounds', JSON.stringify(ownedBackgrounds));
+        
+        // 更新显示
+        updatePointsDisplay();
+        renderBackgroundGrid();
+        
+        // 显示购买成功消息
+        showPointsNotification(-theme.price, `成功购买 ${theme.name}！`);
+        
+        // 自动切换到新背景
+        switchBackground(key);
+    } else {
+        alert(`积分不足！需要 ${theme.price} 积分，当前只有 ${userPoints} 积分。`);
+    }
+}
+
+// 获取累计获得的积分总数
+function getTotalEarnedPoints() {
+    return parseInt(localStorage.getItem('totalEarnedPoints')) || 0;
+}
+
+// 更新累计积分记录
+function updateTotalEarnedPoints(points) {
+    const currentTotal = getTotalEarnedPoints();
+    const newTotal = currentTotal + points;
+    localStorage.setItem('totalEarnedPoints', newTotal);
+    return newTotal;
+}
+
+// 切换背景
+function switchBackground(key) {
+    currentBackground = key;
+    localStorage.setItem('currentBackground', key);
+    
+    // 应用背景
+    applyBackground(key);
+    
+    // 更新网格显示
+    renderBackgroundGrid();
+    
+    // 显示切换成功消息
+    showPointsNotification(0, `已切换到 ${BACKGROUND_THEMES[key].name}`);
+}
+
+// 应用背景
+function applyBackground(key) {
+    const theme = BACKGROUND_THEMES[key];
+    if (theme) {
+        document.body.style.background = theme.preview;
+    }
+}
+
+// 初始化自定义上传功能
+function initializeCustomUpload() {
+    const uploadZone = document.getElementById('uploadZone');
+    const uploadInput = document.getElementById('backgroundUpload');
+    
+    // 点击上传
+    uploadZone.addEventListener('click', () => {
+        uploadInput.click();
+    });
+    
+    // 文件选择
+    uploadInput.addEventListener('change', handleFileUpload);
+    
+    // 拖拽上传
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+    
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+    });
+    
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileUpload({ target: { files } });
+        }
+    });
+}
+
+// 处理文件上传
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // 检查文件类型
+    if (!file.type.startsWith('image/')) {
+        alert('请选择图片文件！');
+        return;
+    }
+    
+    // 检查文件大小（限制5MB）
+    if (file.size > 5 * 1024 * 1024) {
+        alert('文件大小不能超过5MB！');
+        return;
+    }
+    
+    // 读取文件
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const imageData = e.target.result;
+        
+        // 保存自定义背景
+        const customKey = 'custom_' + Date.now();
+        const customTheme = {
+            name: '自定义背景',
+            price: 0,
+            preview: `url(${imageData})`,
+            unlocked: true,
+            description: '用户上传的自定义背景',
+            isCustom: true
+        };
+        
+        // 添加到背景主题
+        BACKGROUND_THEMES[customKey] = customTheme;
+        
+        // 添加到已拥有列表
+        if (!ownedBackgrounds.includes(customKey)) {
+            ownedBackgrounds.push(customKey);
+            localStorage.setItem('ownedBackgrounds', JSON.stringify(ownedBackgrounds));
+        }
+        
+        // 保存自定义背景数据
+        const customBackgrounds = JSON.parse(localStorage.getItem('customBackgrounds')) || {};
+        customBackgrounds[customKey] = customTheme;
+        localStorage.setItem('customBackgrounds', JSON.stringify(customBackgrounds));
+        
+        // 切换到自定义背景
+        switchBackground(customKey);
+        
+        // 切换到预设背景标签以显示新背景
+        document.querySelector('[data-tab="preset"]').click();
+        
+        alert('自定义背景上传成功！');
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+// 初始化背景系统
+function initializeBackgroundSystem() {
+    // 加载自定义背景
+    const customBackgrounds = JSON.parse(localStorage.getItem('customBackgrounds')) || {};
+    Object.assign(BACKGROUND_THEMES, customBackgrounds);
+    
+    // 应用当前背景
+    applyBackground(currentBackground);
+    
+    // 确保默认背景在已拥有列表中
+    if (!ownedBackgrounds.includes('default')) {
+        ownedBackgrounds.push('default');
+        localStorage.setItem('ownedBackgrounds', JSON.stringify(ownedBackgrounds));
+    }
 }
 
 // 多目标管理函数
@@ -1530,6 +2066,10 @@ function initializeProgressPath() {
     
     if (progressPath) {
         pathLength = progressPath.getTotalLength();
+        
+        // 添加木板纹理
+        addWoodPlanks();
+        
         initializeParticleSystem();
         updateCharacterPosition();
         renderMilestoneMarkers();
@@ -2201,12 +2741,54 @@ function initializeAuth() {
             return;
         }
         
-        // 模拟注册
+        // 处理注册逻辑
         if (username && email && password) {
-            alert(currentLanguage === 'zh' ? '注册成功！' : 'Registration successful!');
-            switchAuthTab('login');
+            handleUserRegistration(username, email, password);
         }
     });
+}
+
+// 处理用户注册
+function handleUserRegistration(username, email, password) {
+    // 检查是否通过推荐链接注册
+    const urlParams = new URLSearchParams(window.location.search);
+    const referralCode = urlParams.get('ref');
+    
+    // 模拟注册成功
+    const userId = 'user_' + Date.now();
+    localStorage.setItem('userId', userId);
+    localStorage.setItem('username', username);
+    localStorage.setItem('email', email);
+    localStorage.setItem('hasRegistered', 'true');
+    
+    // 给予注册奖励
+    awardPoints(POINT_RULES.REGISTRATION, '注册奖励');
+    
+    // 如果有推荐码，处理推荐奖励
+    if (referralCode && referralCode !== getUserId()) {
+        // 给推荐人奖励
+        const referrerPoints = parseInt(localStorage.getItem('referrerPoints_' + referralCode)) || 0;
+        localStorage.setItem('referrerPoints_' + referralCode, referrerPoints + POINT_RULES.REFERRAL);
+        
+        // 记录推荐关系
+        localStorage.setItem('referredBy', referralCode);
+        
+        // 显示推荐成功消息
+        showPointsNotification(POINT_RULES.REGISTRATION, '注册成功！通过推荐链接注册，你和推荐人都获得了积分奖励！');
+    } else {
+        showPointsNotification(POINT_RULES.REGISTRATION, '注册成功！欢迎加入学习计划！');
+    }
+    
+    // 注册成功提示
+    alert(currentLanguage === 'zh' ? '注册成功！' : 'Registration successful!');
+    
+    // 切换到登录页面
+    switchAuthTab('login');
+    
+    // 关闭注册面板
+    setTimeout(() => {
+        authPanel.classList.remove('active');
+    }, 1000);
 }
 
 function switchAuthTab(tab) {
@@ -2375,6 +2957,55 @@ function getTreeColor(size, isTop = false) {
 }
 
 // 积分更新时会自动调用树林更新（已在上面的updatePointsDisplay函数中实现）
+
+// 木板纹理生成函数
+function addWoodPlanks() {
+    const woodPlanksContainer = document.getElementById('woodPlanks');
+    if (!woodPlanksContainer || !progressPath) return;
+    
+    const pathLength = progressPath.getTotalLength();
+    const plankWidth = 15;
+    const plankCount = Math.floor(pathLength / plankWidth);
+    
+    for (let i = 0; i < plankCount; i++) {
+        const distance = i * plankWidth;
+        const point = progressPath.getPointAtLength(distance);
+        const nextPoint = progressPath.getPointAtLength(Math.min(distance + plankWidth, pathLength));
+        
+        // 计算木板角度
+        const angle = Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x) * 180 / Math.PI;
+        
+        // 创建木板
+        const plank = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        plank.setAttribute('x', point.x - plankWidth/2);
+        plank.setAttribute('y', point.y - 2);
+        plank.setAttribute('width', plankWidth);
+        plank.setAttribute('height', '4');
+        plank.setAttribute('fill', '#BCAAA4');
+        plank.setAttribute('stroke', '#8D6E63');
+        plank.setAttribute('stroke-width', '0.5');
+        plank.setAttribute('rx', '1');
+        plank.setAttribute('opacity', '0.7');
+        plank.setAttribute('transform', `rotate(${angle} ${point.x} ${point.y})`);
+        
+        woodPlanksContainer.appendChild(plank);
+        
+        // 添加木纹细节
+        if (i % 3 === 0) {
+            const grain = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            grain.setAttribute('x1', point.x - plankWidth/3);
+            grain.setAttribute('y1', point.y);
+            grain.setAttribute('x2', point.x + plankWidth/3);
+            grain.setAttribute('y2', point.y);
+            grain.setAttribute('stroke', '#A1887F');
+            grain.setAttribute('stroke-width', '0.5');
+            grain.setAttribute('opacity', '0.5');
+            grain.setAttribute('transform', `rotate(${angle} ${point.x} ${point.y})`);
+            
+            woodPlanksContainer.appendChild(grain);
+        }
+    }
+}
 
 // 在页面加载时初始化树林
 document.addEventListener('DOMContentLoaded', function() {

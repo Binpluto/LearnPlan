@@ -2859,3 +2859,274 @@ input[type="text"]:focus, input[type="date"]:focus {
     color: #6c757d;
     margin-left: 8px;
 }
+
+/* 装饰元素样式优化 */
+#decorativeBirds {
+    opacity: 0.8;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+#decorativeWaterfall {
+    opacity: 0.7;
+    filter: drop-shadow(0 2px 4px rgba(129, 212, 250, 0.3));
+}
+
+/* 小木桥样式优化 */
+#bridgeBackground {
+    filter: drop-shadow(0 3px 6px rgba(141, 110, 99, 0.2));
+}
+
+#woodPlanks {
+    opacity: 0.8;
+}
+
+/* 整体布局优化 */
+.progress-path-svg {
+    background: linear-gradient(135deg, 
+        rgba(200, 230, 201, 0.1) 0%, 
+        rgba(165, 214, 167, 0.1) 50%, 
+        rgba(129, 199, 132, 0.1) 100%);
+    border-radius: 15px;
+    box-shadow: inset 0 2px 4px rgba(76, 175, 80, 0.1);
+}
+
+/* 里程碑小树样式优化 */
+.milestone-marker {
+    filter: drop-shadow(0 2px 4px rgba(76, 175, 80, 0.2));
+    transition: all 0.3s ease;
+}
+
+.milestone-marker:hover {
+    transform: scale(1.05);
+    filter: drop-shadow(0 4px 8px rgba(76, 175, 80, 0.3));
+}
+
+/* 背景商店按钮 */
+.shop-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.shop-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* 背景商店弹窗 */
+.shop-modal {
+    max-width: 800px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.shop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 20px;
+}
+
+.user-points {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffd700;
+}
+
+.points-icon {
+    font-size: 20px;
+}
+
+.shop-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.shop-tab {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.shop-tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.shop-tab:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.shop-tab.active:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+.background-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.background-item {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    background: rgba(255,255,255,0.05);
+}
+
+.background-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.background-item.locked {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.background-item.selected {
+    border-color: #667eea;
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+}
+
+.background-preview {
+    width: 100%;
+    height: 120px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.background-info {
+    padding: 15px;
+    text-align: center;
+}
+
+.background-name {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: white;
+}
+
+.background-price {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.background-status {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status-locked {
+    background: rgba(255, 0, 0, 0.8);
+    color: white;
+}
+
+.status-owned {
+    background: rgba(0, 255, 0, 0.8);
+    color: white;
+}
+
+.status-current {
+    background: rgba(102, 126, 234, 0.8);
+    color: white;
+}
+
+.lock-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+/* 自定义背景上传 */
+.custom-upload-area {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.upload-zone {
+    border: 2px dashed rgba(255,255,255,0.3);
+    border-radius: 12px;
+    padding: 60px 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.upload-zone:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.upload-zone.dragover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.2);
+}
+
+.upload-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.upload-zone p {
+    color: rgba(255,255,255,0.8);
+    font-size: 16px;
+    margin: 0;
+}
+
+.upload-tips {
+    color: rgba(255,255,255,0.6);
+    font-size: 14px;
+}
+
+.upload-tips p {
+    margin: 0;
+}
