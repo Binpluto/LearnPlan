@@ -1987,9 +1987,14 @@ function renderGoalSelector() {
         goalCard.innerHTML = `
             <div class="goal-card-header">
                 <h4 class="goal-title">${goal.title}</h4>
-                <div class="goal-priority" style="background-color: ${priority.color}20; color: ${priority.color}">
-                    <span>${priority.icon}</span>
-                    <span>${priority.name}</span>
+                <div class="goal-actions">
+                    <button class="goal-edit-btn" onclick="editGoalInline('${goal.id}')" title="编辑目标">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <div class="goal-priority" style="background-color: ${priority.color}20; color: ${priority.color}">
+                        <span>${priority.icon}</span>
+                        <span>${priority.name}</span>
+                    </div>
                 </div>
             </div>
             <div class="goal-meta">
@@ -1999,6 +2004,11 @@ function renderGoalSelector() {
                 </div>
                 <div class="goal-deadline">${new Date(goal.deadline).toLocaleDateString()}</div>
             </div>
+            ${goal.customTags && goal.customTags.length > 0 ? `
+                <div class="goal-tags">
+                    ${goal.customTags.map(tag => `<span class="goal-tag">${tag}</span>`).join('')}
+                </div>
+            ` : ''}
         `;
         
         goalCard.addEventListener('click', () => {
@@ -3007,8 +3017,748 @@ function addWoodPlanks() {
     }
 }
 
-// 在页面加载时初始化树林
+// 页面路由系统
+class PageRouter {
+    constructor() {
+        this.currentPage = 'goals';
+        this.pages = {
+            'goals': 'goalsPage',
+            'tasks': 'tasksPage', 
+            'progress': 'progressPage',
+            'calendar': 'calendarPage',
+            'timer': 'timerPage'
+        };
+        this.init();
+        this.loadSavedPage();
+    }
+
+    init() {
+        this.setupMenuEvents();
+        this.setupSidebarToggle();
+        this.showPage(this.currentPage);
+        this.updateActiveMenu();
+    }
+
+    setupMenuEvents() {
+        document.querySelectorAll('.menu-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const pageId = link.getAttribute('data-page');
+                if (pageId && this.pages[pageId]) {
+                    this.navigateTo(pageId);
+                }
+            });
+        });
+    }
+
+    loadSavedPage() {
+        if (settingsManager) {
+            const savedPage = settingsManager.getSetting('currentPage');
+            if (savedPage && this.pages[savedPage]) {
+                this.currentPage = savedPage;
+            }
+        }
+    }
+
+    savePage(pageId) {
+        if (settingsManager) {
+            settingsManager.updateSetting('currentPage', pageId);
+        }
+    }
+
+    setupSidebarToggle() {
+        const toggleBtn = document.querySelector('.sidebar-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        
+        if (toggleBtn && sidebar) {
+            toggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+            });
+        }
+
+        // 点击主内容区域时关闭侧边栏（移动端）
+        document.querySelector('.main-wrapper')?.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                sidebar?.classList.remove('open');
+            }
+        });
+    }
+
+    navigateTo(pageId) {
+        if (this.currentPage === pageId) return;
+        
+        // 隐藏当前页面
+        const currentPageElement = this.pages[this.currentPage];
+        if (currentPageElement) {
+            this.hidePage(currentPageElement);
+        }
+        
+        // 显示新页面
+        const newPageElement = this.pages[pageId];
+        if (newPageElement) {
+            this.showPage(newPageElement);
+        }
+        
+        this.currentPage = pageId;
+        this.savePage(pageId);
+        this.updateActiveMenu();
+        
+        // 页面切换后的特殊处理
+        this.handlePageSwitch(pageId);
+    }
+
+    showPage(pageId) {
+        const page = document.getElementById(pageId);
+        if (page) {
+            page.classList.add('active');
+            page.style.display = 'block';
+        }
+    }
+
+    hidePage(pageId) {
+        const page = document.getElementById(pageId);
+        if (page) {
+            page.classList.remove('active');
+            page.style.display = 'none';
+        }
+    }
+
+    updateActiveMenu() {
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        const activeLink = document.querySelector(`[data-page="${this.currentPage}"]`);
+        if (activeLink) {
+            activeLink.closest('.menu-item').classList.add('active');
+        }
+    }
+
+    handlePageSwitch(pageId) {
+        switch(pageId) {
+            case 'tasks':
+                // 初始化每日清单页面
+                setTimeout(() => {
+                    renderTasks();
+                    updateTimeStats();
+                }, 100);
+                break;
+            case 'progress':
+                // 更新进度数据
+                setTimeout(() => {
+                    updateProgress();
+                    updateProgressByCategory();
+                }, 100);
+                break;
+            case 'calendar':
+                // 初始化学习日历页面
+                setTimeout(() => {
+                    updateCalendarDisplay();
+                    updateCalendarStats();
+                    updateGoalProgress();
+                }, 100);
+                break;
+            case 'timer':
+                // 初始化计时器页面
+                setTimeout(() => {
+                    if (typeof initializeTimer === 'function') {
+                        initializeTimer();
+                    }
+                }, 100);
+                break;
+            case 'goals':
+                // 初始化目标管理页面
+                setTimeout(() => {
+                    renderGoalSelector();
+                    updateCurrentGoalDisplay();
+                }, 100);
+                break;
+            default:
+                // 默认处理
+                break;
+        }
+    }
+}
+
+// 设置保存和恢复系统
+class SettingsManager {
+    constructor() {
+        this.settings = {
+            currentPage: 'goals',
+            currentGoalId: null,
+            currentBackground: 'default',
+            language: 'zh',
+            pomodoroSettings: {
+                workTime: 25 * 60,
+                breakTime: 5 * 60
+            },
+            sidebarCollapsed: false
+        };
+        this.loadSettings();
+    }
+
+    saveSettings() {
+        localStorage.setItem('userSettings', JSON.stringify(this.settings));
+    }
+
+    loadSettings() {
+        const saved = localStorage.getItem('userSettings');
+        if (saved) {
+            this.settings = { ...this.settings, ...JSON.parse(saved) };
+        }
+    }
+
+    updateSetting(key, value) {
+        this.settings[key] = value;
+        this.saveSettings();
+    }
+
+    getSetting(key) {
+        return this.settings[key];
+    }
+
+    applySettings() {
+        // 应用语言设置
+        currentLanguage = this.settings.language;
+        
+        // 应用背景设置
+        currentBackground = this.settings.currentBackground;
+        applyBackground(currentBackground);
+        
+        // 应用当前目标设置
+        if (this.settings.currentGoalId) {
+            currentGoalId = this.settings.currentGoalId;
+        }
+        
+        // 应用侧边栏状态
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && this.settings.sidebarCollapsed) {
+            sidebar.classList.add('collapsed');
+        }
+    }
+}
+
+// 初始化设置管理器
+let settingsManager;
+
+// 初始化页面路由
+let pageRouter;
+
+// Pomodoro计时器类
+class PomodoroTimer {
+    constructor() {
+        this.workTime = 25 * 60; // 25分钟
+        this.breakTime = 5 * 60; // 5分钟
+        this.currentTime = this.workTime;
+        this.isRunning = false;
+        this.isWorkSession = true;
+        this.timer = null;
+        this.updateDisplay();
+    }
+
+    start() {
+        if (this.isRunning) return;
+        
+        this.isRunning = true;
+        this.timer = setInterval(() => {
+            this.currentTime--;
+            this.updateDisplay();
+            
+            if (this.currentTime <= 0) {
+                this.complete();
+            }
+        }, 1000);
+        
+        this.updateControls();
+    }
+
+    pause() {
+        this.isRunning = false;
+        clearInterval(this.timer);
+        this.updateControls();
+    }
+
+    reset() {
+        this.pause();
+        this.currentTime = this.isWorkSession ? this.workTime : this.breakTime;
+        this.updateDisplay();
+    }
+
+    setTime(seconds) {
+        if (!this.isRunning) {
+            this.currentTime = seconds;
+            this.updateDisplay();
+        }
+    }
+
+    complete() {
+        this.pause();
+        
+        if (this.isWorkSession) {
+            this.showNotification('工作时间结束!', '是时候休息一下了');
+            awardPoints(POINT_RULES.TASK_COMPLETION, '完成专注时间');
+        } else {
+            this.showNotification('休息时间结束!', '准备开始下一轮工作');
+        }
+        
+        this.isWorkSession = !this.isWorkSession;
+        this.currentTime = this.isWorkSession ? this.workTime : this.breakTime;
+        this.updateDisplay();
+    }
+
+    updateDisplay() {
+        const minutes = Math.floor(this.currentTime / 60);
+        const seconds = this.currentTime % 60;
+        const timeDisplay = document.getElementById('timerDisplay');
+        const sessionType = document.getElementById('sessionType');
+        
+        if (timeDisplay) {
+            timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        if (sessionType) {
+            sessionType.textContent = this.isWorkSession ? '工作时间' : '休息时间';
+        }
+    }
+
+    updateControls() {
+        const startBtn = document.getElementById('startTimer');
+        const pauseBtn = document.getElementById('pauseTimer');
+        
+        if (startBtn && pauseBtn) {
+            startBtn.style.display = this.isRunning ? 'none' : 'inline-block';
+            pauseBtn.style.display = this.isRunning ? 'inline-block' : 'none';
+        }
+    }
+
+    showNotification(title, message) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, { body: message });
+        }
+    }
+}
+
+// 计时器功能
+let pomodoroTimer;
+
+// 初始化计时器
+function initializeTimer() {
+    if (window.pomodoroTimer) return;
+    
+    window.pomodoroTimer = new PomodoroTimer();
+    
+    // 绑定控制按钮事件
+    const startBtn = document.getElementById('timerStart');
+    const pauseBtn = document.getElementById('timerPause');
+    const resetBtn = document.getElementById('timerReset');
+    
+    if (startBtn) {
+        startBtn.addEventListener('click', () => window.pomodoroTimer.start());
+    }
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', () => window.pomodoroTimer.pause());
+    }
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => window.pomodoroTimer.reset());
+    }
+    
+    // 绑定预设按钮事件
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const preset = btn.getAttribute('data-preset');
+            if (window.pomodoroTimer.presets[preset]) {
+                window.pomodoroTimer.setTime(window.pomodoroTimer.presets[preset]);
+            }
+        });
+    });
+    
+    // 请求通知权限
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
+
+// 学习日历相关变量
+let currentCalendarDate = new Date();
+let calendarStats = {
+    totalDays: 0,
+    checkedDays: 0,
+    currentStreak: 0,
+    longestStreak: 0
+};
+
+// 学习日历功能
+function initializeCalendarPage() {
+    updateCalendarDisplay();
+    updateCalendarStats();
+    updateGoalProgress();
+    setupCalendarEvents();
+}
+
+function setupCalendarEvents() {
+    // 月份导航
+    const prevMonthBtn = document.getElementById('prevMonth');
+    const nextMonthBtn = document.getElementById('nextMonth');
+    
+    if (prevMonthBtn) {
+        prevMonthBtn.addEventListener('click', () => {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            updateCalendarDisplay();
+        });
+    }
+    
+    if (nextMonthBtn) {
+        nextMonthBtn.addEventListener('click', () => {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            updateCalendarDisplay();
+        });
+    }
+    
+    // 今日按钮
+    const todayBtn = document.getElementById('todayBtn');
+    if (todayBtn) {
+        todayBtn.addEventListener('click', () => {
+            currentCalendarDate = new Date();
+            updateCalendarDisplay();
+        });
+    }
+    
+    // 导出按钮
+    const exportCalendarBtn = document.getElementById('exportCalendarBtn');
+    if (exportCalendarBtn) {
+        exportCalendarBtn.addEventListener('click', exportCalendarData);
+    }
+}
+
+function updateCalendarDisplay() {
+    const monthYearElement = document.getElementById('monthYear');
+    const calendarGrid = document.getElementById('calendarGrid');
+    
+    if (!monthYearElement || !calendarGrid) return;
+    
+    // 更新月份年份显示
+    const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月',
+                       '七月', '八月', '九月', '十月', '十一月', '十二月'];
+    monthYearElement.textContent = `${currentCalendarDate.getFullYear()}年 ${monthNames[currentCalendarDate.getMonth()]}`;
+    
+    // 生成日历网格
+    generateCalendarGrid(calendarGrid);
+}
+
+function generateCalendarGrid(container) {
+    container.innerHTML = '';
+    
+    // 添加星期标题
+    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+    weekdays.forEach(day => {
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'calendar-day-header';
+        dayHeader.textContent = day;
+        container.appendChild(dayHeader);
+    });
+    
+    // 获取当月第一天和最后一天
+    const firstDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1);
+    const lastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    // 生成42个日期格子（6周）
+    for (let i = 0; i < 42; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day';
+        
+        // 判断是否为当月日期
+        if (date.getMonth() !== currentCalendarDate.getMonth()) {
+            dayElement.classList.add('other-month');
+        }
+        
+        // 判断是否为今天
+        const today = new Date();
+        if (date.toDateString() === today.toDateString()) {
+            dayElement.classList.add('today');
+        }
+        
+        // 判断是否已打卡
+        const dateStr = date.toISOString().split('T')[0];
+        if (checkinData[dateStr]) {
+            dayElement.classList.add('checked');
+        }
+        
+        dayElement.textContent = date.getDate();
+        
+        // 添加点击事件
+        dayElement.addEventListener('click', () => {
+            toggleDayCheckin(dateStr, dayElement);
+        });
+        
+        container.appendChild(dayElement);
+    }
+}
+
+function toggleDayCheckin(dateStr, element) {
+    if (checkinData[dateStr]) {
+        delete checkinData[dateStr];
+        element.classList.remove('checked');
+    } else {
+        checkinData[dateStr] = {
+            date: dateStr,
+            timestamp: new Date().getTime()
+        };
+        element.classList.add('checked');
+    }
+    
+    localStorage.setItem('checkinData', JSON.stringify(checkinData));
+    updateCalendarStats();
+    updateGoalProgress();
+}
+
+function updateCalendarStats() {
+    const totalDaysElement = document.getElementById('totalDays');
+    const checkedDaysElement = document.getElementById('checkedDays');
+    const currentStreakElement = document.getElementById('currentStreak');
+    const longestStreakElement = document.getElementById('longestStreak');
+    
+    // 计算统计数据
+    const checkedDates = Object.keys(checkinData).sort();
+    calendarStats.totalDays = getDaysSinceStart();
+    calendarStats.checkedDays = checkedDates.length;
+    calendarStats.currentStreak = calculateCurrentStreak(checkedDates);
+    calendarStats.longestStreak = calculateLongestStreak(checkedDates);
+    
+    // 更新显示
+    if (totalDaysElement) totalDaysElement.textContent = calendarStats.totalDays;
+    if (checkedDaysElement) checkedDaysElement.textContent = calendarStats.checkedDays;
+    if (currentStreakElement) currentStreakElement.textContent = calendarStats.currentStreak;
+    if (longestStreakElement) longestStreakElement.textContent = calendarStats.longestStreak;
+}
+
+function getDaysSinceStart() {
+    const currentGoal = getCurrentGoal();
+    if (!currentGoal || !currentGoal.startDate) return 0;
+    
+    const startDate = new Date(currentGoal.startDate);
+    const today = new Date();
+    const diffTime = Math.abs(today - startDate);
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+}
+
+function calculateCurrentStreak(checkedDates) {
+    if (checkedDates.length === 0) return 0;
+    
+    const today = new Date().toISOString().split('T')[0];
+    let streak = 0;
+    let currentDate = new Date();
+    
+    // 从今天开始往前计算连续天数
+    while (true) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        if (checkedDates.includes(dateStr)) {
+            streak++;
+            currentDate.setDate(currentDate.getDate() - 1);
+        } else {
+            break;
+        }
+    }
+    
+    return streak;
+}
+
+function calculateLongestStreak(checkedDates) {
+    if (checkedDates.length === 0) return 0;
+    
+    let maxStreak = 0;
+    let currentStreak = 1;
+    
+    for (let i = 1; i < checkedDates.length; i++) {
+        const prevDate = new Date(checkedDates[i - 1]);
+        const currDate = new Date(checkedDates[i]);
+        const diffDays = (currDate - prevDate) / (1000 * 60 * 60 * 24);
+        
+        if (diffDays === 1) {
+            currentStreak++;
+        } else {
+            maxStreak = Math.max(maxStreak, currentStreak);
+            currentStreak = 1;
+        }
+    }
+    
+    return Math.max(maxStreak, currentStreak);
+}
+
+function updateGoalProgress() {
+    const goalProgressElement = document.getElementById('goalProgress');
+    const goalNameElement = document.getElementById('goalName');
+    const goalDeadlineElement = document.getElementById('goalDeadline');
+    const progressPercentElement = document.getElementById('progressPercent');
+    
+    const currentGoal = getCurrentGoal();
+    if (!currentGoal) {
+        if (goalNameElement) goalNameElement.textContent = '暂无目标';
+        if (goalDeadlineElement) goalDeadlineElement.textContent = '';
+        if (progressPercentElement) progressPercentElement.textContent = '0%';
+        if (goalProgressElement) goalProgressElement.style.width = '0%';
+        return;
+    }
+    
+    const progress = calculateGoalProgress(currentGoal);
+    
+    if (goalNameElement) goalNameElement.textContent = currentGoal.title;
+    if (goalDeadlineElement) {
+        const deadline = new Date(currentGoal.deadline);
+        goalDeadlineElement.textContent = `截止：${deadline.toLocaleDateString()}`;
+    }
+    if (progressPercentElement) progressPercentElement.textContent = `${Math.round(progress)}%`;
+    if (goalProgressElement) {
+        goalProgressElement.style.width = `${progress}%`;
+        goalProgressElement.style.backgroundColor = currentGoal.color || '#4CAF50';
+    }
+}
+
+// 内联编辑目标
+function editGoalInline(goalId) {
+    const goal = learningGoals.find(g => g.id === goalId);
+    if (!goal) return;
+    
+    const goalCard = document.querySelector(`.goal-card[data-goal-id="${goalId}"]`) || 
+                     document.querySelector(`.goal-card:nth-child(${learningGoals.findIndex(g => g.id === goalId) + 1})`);
+    if (!goalCard) return;
+    
+    const category = PRESET_CATEGORIES[goal.category];
+    const priority = PRIORITY_LEVELS[goal.priority];
+    
+    goalCard.innerHTML = `
+        <div class="goal-edit-form">
+            <div class="edit-field">
+                <label>标签 (用逗号分隔):</label>
+                <input type="text" id="edit-tags-${goalId}" value="${goal.customTags ? goal.customTags.join(', ') : ''}" placeholder="输入标签，用逗号分隔">
+            </div>
+            <div class="edit-field">
+                <label>优先级:</label>
+                <select id="edit-priority-${goalId}">
+                    ${Object.entries(PRIORITY_LEVELS).map(([key, p]) => `
+                        <option value="${key}" ${key === goal.priority ? 'selected' : ''}>
+                            ${p.icon} ${p.name}
+                        </option>
+                    `).join('')}
+                </select>
+            </div>
+            <div class="edit-field">
+                <label>颜色:</label>
+                <div class="color-picker" id="color-picker-${goalId}">
+                    ${GOAL_COLORS.map(color => `
+                        <div class="color-option ${goal.color === color ? 'selected' : ''}" 
+                             style="background-color: ${color}" 
+                             onclick="selectColor('${goalId}', '${color}')">
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="edit-actions">
+                <button onclick="saveGoalEdit('${goalId}')" class="save-btn">保存</button>
+                <button onclick="cancelGoalEdit('${goalId}')" class="cancel-btn">取消</button>
+            </div>
+        </div>
+    `;
+}
+
+// 选择颜色
+function selectColor(goalId, color) {
+    const colorPicker = document.getElementById(`color-picker-${goalId}`);
+    if (!colorPicker) return;
+    
+    const colorOptions = colorPicker.querySelectorAll('.color-option');
+    colorOptions.forEach(option => option.classList.remove('selected'));
+    
+    const selectedOption = colorPicker.querySelector(`[style*="${color}"]`);
+    if (selectedOption) {
+        selectedOption.classList.add('selected');
+    }
+}
+
+// 保存目标编辑
+function saveGoalEdit(goalId) {
+    const goal = learningGoals.find(g => g.id === goalId);
+    if (!goal) return;
+    
+    const tagsInput = document.getElementById(`edit-tags-${goalId}`);
+    const prioritySelect = document.getElementById(`edit-priority-${goalId}`);
+    const selectedColor = document.querySelector(`#color-picker-${goalId} .color-option.selected`);
+    
+    // 更新标签
+    const tagsValue = tagsInput.value.trim();
+    goal.customTags = tagsValue ? tagsValue.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+    
+    // 更新优先级
+    goal.priority = prioritySelect.value;
+    
+    // 更新颜色
+    if (selectedColor) {
+        const colorStyle = selectedColor.style.backgroundColor;
+        // 从RGB转换为HEX或直接使用
+        goal.color = colorStyle;
+        // 如果是rgb格式，转换为hex
+        if (colorStyle.startsWith('rgb')) {
+            const rgb = colorStyle.match(/\d+/g);
+            goal.color = '#' + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
+        }
+    }
+    
+    // 保存到localStorage
+    saveLearningGoals();
+    
+    // 重新渲染目标选择器
+    renderGoalSelector();
+    
+    // 更新倒计时显示
+    updateCountdown();
+    
+    showNotification('目标已更新！', 'success');
+}
+
+// 取消目标编辑
+function cancelGoalEdit(goalId) {
+    renderGoalSelector();
+}
+
+function exportCalendarData() {
+    const data = {
+        checkinData: checkinData,
+        stats: calendarStats,
+        exportDate: new Date().toISOString(),
+        goals: learningGoals
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `学习日历_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// 全局路由实例
+
+// 在页面加载时初始化所有系统
 document.addEventListener('DOMContentLoaded', function() {
+    initializeMultiGoalSystem();
+    initializeProgressPath();
+    initializeBackgroundSystem();
+    initializeCalendarPage();
+    
+    // 初始化设置管理器
+    settingsManager = new SettingsManager();
+    settingsManager.applySettings();
+    
+    // 初始化页面路由
+    pageRouter = new PageRouter();
+    
     // 延迟初始化树林，确保其他系统已加载
     setTimeout(() => {
         initializeForestSystem();

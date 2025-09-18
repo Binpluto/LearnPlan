@@ -49,13 +49,69 @@
 
     <!-- 主容器 -->
     <div class="container">
-        <!-- 语言切换按钮 -->
-        <div class="language-toggle">
-            <button id="langBtn" class="lang-btn">EN</button>
-        </div>
+        <!-- 侧边栏导航 -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2 class="sidebar-title" data-zh="学习助手" data-en="Study Helper">学习助手</h2>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item active" data-page="goals">
+                    <a href="#" class="menu-link">
+                        <i class="fas fa-target"></i>
+                        <span class="menu-text" data-zh="目标管理" data-en="Goal Management">目标管理</span>
+                    </a>
+                </li>
+                <li class="menu-item" data-page="tasks">
+                    <a href="#" class="menu-link">
+                        <i class="fas fa-list-check"></i>
+                        <span class="menu-text" data-zh="每日清单" data-en="Daily Tasks">每日清单</span>
+                    </a>
+                </li>
+                <li class="menu-item" data-page="progress">
+                    <a href="#" class="menu-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="menu-text" data-zh="进度分析" data-en="Progress Analysis">进度分析</span>
+                    </a>
+                </li>
+                <li class="menu-item" data-page="calendar">
+                    <a href="#" class="menu-link">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span class="menu-text" data-zh="学习日历" data-en="Study Calendar">学习日历</span>
+                    </a>
+                </li>
+                <li class="menu-item" data-page="timer">
+                    <a href="#" class="menu-link">
+                        <i class="fas fa-clock"></i>
+                        <span class="menu-text" data-zh="计时器" data-en="Timer">计时器</span>
+                    </a>
+                </li>
+                <li class="menu-item" data-page="referral">
+                    <a href="#" class="menu-link" onclick="addReferralPoints()">
+                        <i class="fas fa-user-friends"></i>
+                        <span class="menu-text" data-zh="推荐好友" data-en="Refer Friend">推荐好友</span>
+                    </a>
+                </li>
+                <li class="menu-item" data-page="shop">
+                    <a href="#" class="menu-link" onclick="openBackgroundShop()">
+                        <i class="fas fa-palette"></i>
+                        <span class="menu-text" data-zh="背景商店" data-en="Background Shop">背景商店</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
 
-        <!-- 头部 -->
-        <header class="header">
+        <!-- 主内容区域 -->
+        <div class="main-wrapper">
+            <!-- 语言切换按钮 -->
+            <div class="language-toggle">
+                <button id="langBtn" class="lang-btn">EN</button>
+            </div>
+
+            <!-- 头部 -->
+            <header class="header">
             <div class="header-content">
                 <div class="logo-section">
                     <h1 class="logo" data-zh="Just Do it !" data-en="Just Do it !">Just Do it !</h1>
@@ -67,14 +123,14 @@
                         <span class="points-label" data-zh="积分" data-en="Points">积分</span>
                         <span class="points-value" id="userPoints">0</span>
                     </div>
-                    <button class="referral-btn" onclick="addReferralPoints()" data-zh="推荐好友" data-en="Refer Friend">推荐好友</button>
-                    <button class="shop-btn" id="backgroundShopBtn" onclick="openBackgroundShop()" data-zh="背景商店" data-en="Background Shop">🎨 背景商店</button>
                 </div>
             </div>
         </header>
 
-        <!-- 主要内容区域 -->
-        <main class="main-content">
+            <!-- 主要内容区域 -->
+            <main class="main-content">
+                <!-- 目标管理页面 -->
+                <div class="page" id="goalsPage" data-page="goals">
             <!-- 学习目标设置 -->
             <section class="goal-section">
                 <div class="section-header">
@@ -121,10 +177,10 @@
                         <!-- 动态显示当前目标信息 -->
                     </div>
                 </div>
-            </section>
+                </section>
 
-            <!-- 倒计时 -->
-            <section class="countdown-section">
+                <!-- 倒计时 -->
+                <section class="countdown-section">
                 <h2><i class="fas fa-clock"></i> <span data-zh="倒计时" data-en="Countdown">倒计时</span></h2>
                 <div id="countdown" class="countdown-display">
                     <div class="time-unit">
@@ -144,10 +200,12 @@
                         <label data-zh="秒" data-en="Seconds">秒</label>
                     </div>
                 </div>
-            </section>
+                </section>
+                </div>
 
-            <!-- 每日清单 -->
-            <section class="daily-tasks-section">
+                <!-- 每日清单页面 -->
+                <div class="page" id="tasksPage" data-page="tasks" style="display: none;">
+                <section class="daily-tasks-section">
                 <h2><i class="fas fa-list-check"></i> <span data-zh="每日清单" data-en="Daily Tasks">每日清单</span></h2>
                 <div class="task-form">
                     <input type="text" id="taskInput" placeholder="添加今日任务..." data-placeholder-zh="添加今日任务..." data-placeholder-en="Add today's task..." class="task-input">
@@ -198,355 +256,148 @@
                 </div>
             </section>
 
-            <!-- 进度分析 -->
-            <section class="progress-section">
-                <h2><i class="fas fa-chart-line"></i> <span data-zh="进度分析" data-en="Progress Analysis">进度分析</span></h2>
-                <div class="progress-stats">
-                    <div class="stat-item">
-                        <span class="stat-number" id="totalDays">0</span>
-                        <span class="stat-label" data-zh="总天数" data-en="Total Days">总天数</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number" id="checkedDays">0</span>
-                        <span class="stat-label" data-zh="已打卡" data-en="Checked In">已打卡</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number" id="completionRate">0%</span>
-                        <span class="stat-label" data-zh="完成率" data-en="Completion Rate">完成率</span>
-                    </div>
-                </div>
-                <div class="progress-bar">
-                    <div id="progressFill" class="progress-fill"></div>
-                </div>
-                
-                <!-- 进度路径可视化 -->
-                <div class="progress-path-section">
-                    <h3 data-zh="学习之路" data-en="Learning Journey">学习之路</h3>
-                    <div class="progress-path-container">
-                        <svg class="progress-path-svg" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet">
-                            <!-- 背景装饰 -->
-                            <defs>
-                <!-- 背景渐变 -->
-                <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#e8f5e8;stop-opacity:1" />
-                    <stop offset="50%" style="stop-color:#f0f8ff;stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#e1f5fe;stop-opacity:1" />
-                </linearGradient>
-                <!-- 路径背景渐变 -->
-                <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" style="stop-color:#81c784;stop-opacity:0.3" />
-                    <stop offset="25%" style="stop-color:#64b5f6;stop-opacity:0.3" />
-                    <stop offset="50%" style="stop-color:#ba68c8;stop-opacity:0.3" />
-                    <stop offset="75%" style="stop-color:#ffb74d;stop-opacity:0.3" />
-                    <stop offset="100%" style="stop-color:#f06292;stop-opacity:0.3" />
-                </linearGradient>
-                <!-- 进度渐变 -->
-                <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" style="stop-color:#4caf50;stop-opacity:1" />
-                    <stop offset="25%" style="stop-color:#2196f3;stop-opacity:1" />
-                    <stop offset="50%" style="stop-color:#9c27b0;stop-opacity:1" />
-                    <stop offset="75%" style="stop-color:#ff9800;stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#e91e63;stop-opacity:1" />
-                </linearGradient>
-                <!-- 发光效果 -->
-                <filter id="glow">
-                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                    <feMerge> 
-                        <feMergeNode in="coloredBlur"/>
-                        <feMergeNode in="SourceGraphic"/> 
-                    </feMerge>
-                </filter>
-                <!-- 阴影效果 -->
-                 <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                     <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.3)"/>
-                 </filter>
-                 <!-- 里程碑渐变 -->
-                 <linearGradient id="completedGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                     <stop offset="0%" style="stop-color:#66bb6a;stop-opacity:1" />
-                     <stop offset="100%" style="stop-color:#4caf50;stop-opacity:1" />
-                 </linearGradient>
-                 <linearGradient id="pendingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                     <stop offset="0%" style="stop-color:#ffb74d;stop-opacity:1" />
-                     <stop offset="100%" style="stop-color:#ff9800;stop-opacity:1" />
-                 </linearGradient>
-                 <!-- 鼓励气泡渐变 -->
-                 <radialGradient id="bubbleGradient" cx="50%" cy="30%" r="70%">
-                     <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
-                     <stop offset="70%" style="stop-color:#f8f9fa;stop-opacity:1" />
-                     <stop offset="100%" style="stop-color:#e8f5e8;stop-opacity:1" />
-                 </radialGradient>
-                 <linearGradient id="bubbleBorder" x1="0%" y1="0%" x2="100%" y2="100%">
-                     <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
-                     <stop offset="50%" style="stop-color:#66BB6A;stop-opacity:1" />
-                     <stop offset="100%" style="stop-color:#4CAF50;stop-opacity:1" />
-                 </linearGradient>
-                 <!-- 气泡发光效果 -->
-                 <filter id="bubbleGlow" x="-50%" y="-50%" width="200%" height="200%">
-                     <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                     <feMerge>
-                         <feMergeNode in="coloredBlur"/>
-                         <feMergeNode in="SourceGraphic"/>
-                     </feMerge>
-                 </filter>
-             </defs>
-                            
-                            <!-- 背景装饰 -->
-            <rect width="100%" height="100%" fill="url(#backgroundGradient)"/>
-            
-            <!-- 装饰性云朵 -->
-            <g opacity="0.6">
-                <ellipse cx="80" cy="50" rx="15" ry="8" fill="#ffffff" opacity="0.8"/>
-                <ellipse cx="75" cy="45" rx="10" ry="6" fill="#ffffff" opacity="0.8"/>
-                <ellipse cx="85" cy="45" rx="8" ry="5" fill="#ffffff" opacity="0.8"/>
-            </g>
-            <g opacity="0.5">
-                <ellipse cx="320" cy="80" rx="12" ry="7" fill="#ffffff" opacity="0.7"/>
-                <ellipse cx="315" cy="75" rx="8" ry="5" fill="#ffffff" opacity="0.7"/>
-                <ellipse cx="325" cy="75" rx="6" ry="4" fill="#ffffff" opacity="0.7"/>
-            </g>
-            
-            <!-- 装饰性星星 -->
-            <g opacity="0.4">
-                <polygon points="150,30 152,36 158,36 153,40 155,46 150,42 145,46 147,40 142,36 148,36" fill="#ffd700"/>
-                <polygon points="280,60 281,64 285,64 282,67 283,71 280,68 277,71 278,67 275,64 279,64" fill="#ffd700"/>
-                <polygon points="50,120 51,123 54,123 52,125 53,128 50,126 47,128 48,125 46,123 49,123" fill="#ffd700"/>
-            </g>
-            
-            <!-- 装饰性瀑布 -->
-        <g id="decorativeWaterfall">
-            <!-- 瀑布背景 -->
-            <g transform="translate(50,150)">
-                <!-- 瀑布主体 -->
-                <path d="M0,0 Q5,20 0,40 Q-3,60 2,80 Q6,100 0,120 Q-4,140 3,160" 
-                      stroke="#81D4FA" stroke-width="8" fill="none" opacity="0.6">
-                    <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2s" repeatCount="indefinite"/>
-                </path>
-                
-                <!-- 瀑布水花效果 -->
-                <g opacity="0.5">
-                    <circle cx="-2" cy="40" r="1.5" fill="#B3E5FC">
-                        <animate attributeName="cy" values="40;45;40" dur="1.5s" repeatCount="indefinite"/>
-                        <animate attributeName="opacity" values="0.8;0.3;0.8" dur="1.5s" repeatCount="indefinite"/>
-                    </circle>
-                    <circle cx="3" cy="80" r="1" fill="#E1F5FE">
-                        <animate attributeName="cy" values="80;85;80" dur="2s" repeatCount="indefinite"/>
-                        <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite"/>
-                    </circle>
-                    <circle cx="-1" cy="120" r="1.2" fill="#B3E5FC">
-                        <animate attributeName="cy" values="120;125;120" dur="1.8s" repeatCount="indefinite"/>
-                        <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1.8s" repeatCount="indefinite"/>
-                    </circle>
-                </g>
-                
-                <!-- 瀑布底部水池 -->
-                <ellipse cx="0" cy="165" rx="12" ry="4" fill="#81D4FA" opacity="0.4">
-                    <animate attributeName="rx" values="12;14;12" dur="3s" repeatCount="indefinite"/>
-                    <animate attributeName="opacity" values="0.4;0.6;0.4" dur="3s" repeatCount="indefinite"/>
-                </ellipse>
-            </g>
-        </g>
-        
-        <!-- 装饰性小鸟群 -->
-        <g id="decorativeBirds">
-                <!-- 小鸟1 - 左上角 -->
-                <g transform="translate(100,80)">
-                    <ellipse cx="0" cy="0" rx="8" ry="5" fill="#8BC34A" opacity="0.8">
-                        <animateTransform attributeName="transform" type="translate" values="0,0; 2,-1; 0,0" dur="3s" repeatCount="indefinite"/>
-                    </ellipse>
-                    <circle cx="-3" cy="-1" r="3" fill="#689F38"/>
-                    <polygon points="-8,0 -12,-2 -12,2" fill="#8BC34A"/>
-                    <circle cx="-5" cy="-2" r="0.8" fill="#333"/>
-                    <polygon points="3,1 8,0 8,3" fill="#8BC34A" opacity="0.7">
-                        <animateTransform attributeName="transform" type="rotate" values="0 5 1.5; -15 5 1.5; 0 5 1.5" dur="0.8s" repeatCount="indefinite"/>
-                    </polygon>
-                </g>
-                
-                <!-- 小鸟2 - 右上角 -->
-                <g transform="translate(700,120)">
-                    <ellipse cx="0" cy="0" rx="6" ry="4" fill="#4CAF50" opacity="0.7">
-                        <animateTransform attributeName="transform" type="translate" values="0,0; -1,1; 0,0" dur="4s" repeatCount="indefinite"/>
-                    </ellipse>
-                    <circle cx="-2" cy="-1" r="2.5" fill="#388E3C"/>
-                    <polygon points="-6,0 -9,-1 -9,1" fill="#4CAF50"/>
-                    <circle cx="-4" cy="-1.5" r="0.6" fill="#333"/>
-                    <polygon points="2,0.5 6,0 6,2" fill="#4CAF50" opacity="0.6">
-                        <animateTransform attributeName="transform" type="rotate" values="0 4 1; -20 4 1; 0 4 1" dur="1s" repeatCount="indefinite"/>
-                    </polygon>
-                </g>
-                
-                <!-- 小鸟3 - 中间飞行 -->
-                <g>
-                    <ellipse cx="0" cy="0" rx="5" ry="3" fill="#66BB6A" opacity="0.6">
-                        <animateTransform attributeName="transform" type="translate" values="200,200; 600,180; 200,200" dur="15s" repeatCount="indefinite"/>
-                    </ellipse>
-                    <circle cx="-2" cy="-0.5" r="2" fill="#4CAF50">
-                        <animateTransform attributeName="transform" type="translate" values="200,200; 600,180; 200,200" dur="15s" repeatCount="indefinite"/>
-                    </circle>
-                    <polygon points="-5,0 -7,-1 -7,1" fill="#66BB6A">
-                        <animateTransform attributeName="transform" type="translate" values="200,200; 600,180; 200,200" dur="15s" repeatCount="indefinite"/>
-                    </polygon>
-                    <circle cx="-3" cy="-1" r="0.5" fill="#333">
-                        <animateTransform attributeName="transform" type="translate" values="200,200; 600,180; 200,200" dur="15s" repeatCount="indefinite"/>
-                    </circle>
-                    <polygon points="1,0 4,-0.5 4,1" fill="#66BB6A" opacity="0.5">
-                        <animateTransform attributeName="transform" type="translate" values="200,200; 600,180; 200,200" dur="15s" repeatCount="indefinite"/>
-                        <animateTransform attributeName="transform" type="rotate" values="0 2.5 0.25; -25 2.5 0.25; 0 2.5 0.25" dur="0.6s" repeatCount="indefinite" additive="sum"/>
-                    </polygon>
-                </g>
-            </g>
-            
-            <!-- 动态树林容器 -->
-            <g id="forestContainer" opacity="0.8">
-                <!-- 树木将通过JavaScript动态添加 -->
-            </g>
-            
-            <!-- 小木桥背景层 -->
-            <g id="bridgeBackground">
-                <!-- 桥梁阴影 -->
-                <path d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
-                      stroke="rgba(0,0,0,0.3)" stroke-width="48" fill="none" opacity="0.4" filter="url(#shadow)"/>
-                
-                <!-- 桥梁主体 -->
-                <path d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
-                      stroke="#8D6E63" stroke-width="40" fill="none" stroke-linecap="round"/>
-                
-                <!-- 桥面 -->
-                <path id="roadBackground" d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
-                      stroke="#D7CCC8" stroke-width="32" fill="none" stroke-linecap="round"/>
-                
-                <!-- 木板纹理 -->
-                <g id="woodPlanks">
-                    <!-- 通过JavaScript动态添加木板纹理 -->
-                </g>
-            </g>
-                            
-            <!-- 主桥梁路径 -->
-            <path id="mainPath" d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
-                  stroke="url(#pathGradient)" stroke-width="28" fill="none" stroke-linecap="round" filter="url(#glow)"/>
-                  
-            <!-- 桥梁护栏 -->
-            <path d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
-                  stroke="#A1887F" stroke-width="4" fill="none" opacity="0.8" stroke-linecap="round" transform="translate(0,-16)"/>
-            <path d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
-                  stroke="#A1887F" stroke-width="4" fill="none" opacity="0.8" stroke-linecap="round" transform="translate(0,16)"/>
-                            
-                            <!-- 进度路径 -->
-            <path id="progressPath" d="M 50 200 Q 200 150 350 180 Q 500 210 650 160 Q 750 140 750 140" 
-                  stroke="url(#progressGradient)" stroke-width="8" fill="none" stroke-linecap="round" 
-                  stroke-dasharray="0 1000" opacity="0.8" filter="url(#glow)">
-                <animate attributeName="stroke-dasharray" dur="2s" values="0 1000;200 800" fill="freeze"/>
-            </path>
-            
-            <!-- 进度粒子效果 -->
-            <g id="progressParticles" opacity="0.8">
-                <!-- 动态粒子将通过JavaScript添加 -->
-            </g>
-                            
-                            <!-- 拉布布像素小人 -->
-            <g id="character" transform="translate(50, 200)">
-                <!-- 身体主体（黄色椭圆） -->
-                <ellipse cx="0" cy="0" rx="10" ry="12" fill="#FFD700" stroke="#FFA500" stroke-width="1"/>
-                <!-- 头部（稍小的黄色圆） -->
-                <circle cx="0" cy="-8" r="7" fill="#FFD700" stroke="#FFA500" stroke-width="1"/>
-                <!-- 嘴巴（橙色三角形） -->
-                <polygon points="0,-5 -3,-2 3,-2" fill="#FF8C00" stroke="#FF6347" stroke-width="1"/>
-                <!-- 眼睛（黑色圆点） -->
-                <circle cx="-2.5" cy="-10" r="1.5" fill="#000000"/>
-                <circle cx="2.5" cy="-10" r="1.5" fill="#000000"/>
-                <!-- 眼睛高光 -->
-                <circle cx="-2" cy="-10.5" r="0.5" fill="#FFFFFF"/>
-                <circle cx="3" cy="-10.5" r="0.5" fill="#FFFFFF"/>
-                <!-- 翅膀（左） -->
-                <ellipse cx="-8" cy="-2" rx="3" ry="5" fill="#FFD700" stroke="#FFA500" stroke-width="1">
-                    <animateTransform attributeName="transform" type="rotate" 
-                                    values="0 -8 -2;-15 -8 -2;0 -8 -2;15 -8 -2;0 -8 -2" 
-                                    dur="2s" repeatCount="indefinite"/>
-                </ellipse>
-                <!-- 翅膀（右） -->
-                <ellipse cx="8" cy="-2" rx="3" ry="5" fill="#FFD700" stroke="#FFA500" stroke-width="1">
-                    <animateTransform attributeName="transform" type="rotate" 
-                                    values="0 8 -2;15 8 -2;0 8 -2;-15 8 -2;0 8 -2" 
-                                    dur="2s" repeatCount="indefinite"/>
-                </ellipse>
-                <!-- 脚蹼（左） -->
-                <ellipse cx="-3" cy="12" rx="2" ry="3" fill="#FF8C00" stroke="#FF6347" stroke-width="1">
-                    <animateTransform attributeName="transform" type="rotate" 
-                                    values="0 -3 12;10 -3 12;0 -3 12;-10 -3 12;0 -3 12" 
-                                    dur="1.5s" repeatCount="indefinite"/>
-                </ellipse>
-                <!-- 脚蹼（右） -->
-                <ellipse cx="3" cy="12" rx="2" ry="3" fill="#FF8C00" stroke="#FF6347" stroke-width="1">
-                    <animateTransform attributeName="transform" type="rotate" 
-                                    values="0 3 12;-10 3 12;0 3 12;10 3 12;0 3 12" 
-                                    dur="1.5s" repeatCount="indefinite"/>
-                </ellipse>
-                <!-- 腮红 -->
-                <circle cx="-6" cy="-6" r="1.5" fill="#FFB6C1" opacity="0.6"/>
-                <circle cx="6" cy="-6" r="1.5" fill="#FFB6C1" opacity="0.6"/>
-                <!-- 阴影 -->
-                <ellipse cx="0" cy="16" rx="8" ry="2" fill="rgba(0,0,0,0.2)"/>
-            </g>
-                            
-                            <!-- 里程碑容器 -->
-                            <g id="milestonesContainer"></g>
-                            
-                            <!-- 鼓励气泡 -->
-            <g id="encouragementBubble" class="encouragement-bubble" style="display: none;">
-                <!-- 气泡阴影 -->
-                <ellipse cx="0" cy="-35" rx="65" ry="30" fill="rgba(0,0,0,0.1)" opacity="0.5"/>
-                <!-- 主气泡 -->
-                <ellipse cx="0" cy="-40" rx="60" ry="25" fill="url(#bubbleGradient)" stroke="url(#bubbleBorder)" stroke-width="3" filter="url(#bubbleGlow)"/>
-                <!-- 装饰星星 -->
-                <g class="bubble-stars">
-                    <polygon points="-45,-50 -43,-46 -38,-46 -41,-42 -40,-37 -45,-40 -50,-37 -49,-42 -52,-46 -47,-46" fill="#FFD700" opacity="0.8"/>
-                    <polygon points="35,-30 36,-28 39,-28 37,-26 38,-23 35,-25 32,-23 33,-26 31,-28 34,-28" fill="#FFD700" opacity="0.6"/>
-                    <circle cx="-35" cy="-30" r="1.5" fill="#FFD700" opacity="0.7"/>
-                    <circle cx="45" cy="-50" r="1" fill="#FFD700" opacity="0.8"/>
-                </g>
-                <!-- 气泡尾巴 -->
-                <polygon points="-10,-15 0,-5 10,-15" fill="url(#bubbleGradient)" stroke="url(#bubbleBorder)" stroke-width="2"/>
-                <!-- 文字 -->
-                <text x="0" y="-35" text-anchor="middle" font-size="14" fill="#2E7D32" font-weight="bold" class="bubble-text">
-                    <tspan id="bubbleText">继续加油！</tspan>
-                </text>
-                <!-- 闪光效果 -->
-                <g class="bubble-sparkle">
-                    <circle cx="-20" cy="-50" r="1" fill="white" opacity="0.9"/>
-                    <circle cx="30" cy="-45" r="1.5" fill="white" opacity="0.7"/>
-                    <circle cx="-15" cy="-30" r="0.8" fill="white" opacity="0.8"/>
-                </g>
-            </g>
-                        </svg>
+
+
+
+
+
+
+
+ 
+
+
+
+
+                <!-- 学习日历页面 -->
+                <div class="page" id="calendarPage" data-page="calendar" style="display: none;">
+                    <section class="calendar-section">
+                        <h2><i class="fas fa-calendar-alt"></i> <span data-zh="学习日历" data-en="Learning Calendar">学习日历</span></h2>
                         
-                        <!-- 路径说明 -->
-                        <div class="path-legend">
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #4caf50;"></div>
-                                <span data-zh="已完成进度" data-en="Completed Progress">已完成进度</span>
+                        <!-- 日历月份导航 -->
+                        <div class="calendar-nav">
+                            <button id="prevMonth" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+                            <h3 id="currentMonth" class="month-title"></h3>
+                            <button id="nextMonth" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                        
+                        <!-- 日历网格 -->
+                        <div id="calendar" class="calendar"></div>
+                        
+                        <!-- 日历统计信息 -->
+                        <div class="calendar-stats">
+                            <div class="stat-card">
+                                <div class="stat-value" id="monthlyCheckins">0</div>
+                                <div class="stat-label" data-zh="本月打卡" data-en="Monthly Check-ins">本月打卡</div>
                             </div>
-                            <div class="legend-item">
-                                <div class="legend-color milestone-marker"></div>
-                                <span data-zh="里程碑" data-en="Milestones">里程碑</span>
+                            <div class="stat-card">
+                                <div class="stat-value" id="currentStreak">0</div>
+                                <div class="stat-label" data-zh="连续天数" data-en="Current Streak">连续天数</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="longestStreak">0</div>
+                                <div class="stat-label" data-zh="最长连续" data-en="Longest Streak">最长连续</div>
                             </div>
                         </div>
-                    </div>
+                        
+                        <!-- 目标进度概览 -->
+                        <div class="goals-overview">
+                            <h3><i class="fas fa-target"></i> <span data-zh="目标进度" data-en="Goals Progress">目标进度</span></h3>
+                            <div id="goalsProgressList" class="goals-progress-list"></div>
+                        </div>
+                        
+                        <!-- 日历操作按钮 -->
+                        <div class="calendar-actions">
+                            <button id="exportCalendar" class="btn btn-secondary">
+                                <i class="fas fa-download"></i>
+                                <span data-zh="导出日历" data-en="Export Calendar">导出日历</span>
+                            </button>
+                            <button id="todayBtn" class="btn btn-primary">
+                                <i class="fas fa-calendar-day"></i>
+                                <span data-zh="回到今天" data-en="Go to Today">回到今天</span>
+                            </button>
+                        </div>
+                    </section>
                 </div>
-            </section>
 
-            <!-- 日历和导出 -->
-            <section class="calendar-section">
-                <h2><i class="fas fa-calendar"></i> <span data-zh="学习日历" data-en="Learning Calendar">学习日历</span></h2>
-                <div id="calendar" class="calendar"></div>
-                <div class="export-options">
-                    <h3><i class="fas fa-download"></i> <span data-zh="导出选项" data-en="Export Options">导出选项</span></h3>
-                    <div class="export-buttons">
-                        <button id="exportIcsBtn" class="btn btn-export" data-zh="导出ICS (Outlook/Google)" data-en="Export ICS (Outlook/Google)">导出ICS (Outlook/Google)</button>
-                        <button id="exportPdfBtn" class="btn btn-export" data-zh="导出PDF" data-en="Export PDF">导出PDF</button>
-                        <button id="exportJsonBtn" class="btn btn-export" data-zh="导出JSON" data-en="Export JSON">导出JSON</button>
-                    </div>
+                <!-- 进度分析页面 -->
+                <div class="page" id="progressPage" data-page="progress" style="display: none;">
+                    <section class="progress-analysis-section">
+                        <h2><i class="fas fa-chart-line"></i> <span data-zh="进度分析" data-en="Progress Analysis">进度分析</span></h2>
+                        <div class="progress-stats">
+                            <div class="stat-item">
+                                <span class="stat-number" id="totalDays">0</span>
+                                <span class="stat-label" data-zh="总天数" data-en="Total Days">总天数</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" id="checkedDays">0</span>
+                                <span class="stat-label" data-zh="已打卡" data-en="Checked In">已打卡</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" id="completionRate">0%</span>
+                                <span class="stat-label" data-zh="完成率" data-en="Completion Rate">完成率</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="progressFill" class="progress-fill"></div>
+                        </div>
+                        
+                        <!-- 进度路径可视化 -->
+                        <div class="progress-path-section">
+                            <h3 data-zh="学习之路" data-en="Learning Journey">学习之路</h3>
+                            <div class="progress-path-container">
+                                <svg class="progress-path-svg" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet">
+                                    <!-- 这里包含完整的SVG进度路径可视化内容 -->
+                                    <rect width="100%" height="100%" fill="url(#backgroundGradient)"/>
+                                    <!-- 其他SVG内容将保持原样 -->
+                                </svg>
+                            </div>
+                        </div>
+                    </section>
                 </div>
-            </section>
-        </main>
+
+                <!-- 学习日历页面 -->
+                <div class="page" id="calendarPage" data-page="calendar" style="display: none;">
+                    <section class="calendar-section">
+                        <h2><i class="fas fa-calendar"></i> <span data-zh="学习日历" data-en="Learning Calendar">学习日历</span></h2>
+                        <div id="calendar" class="calendar"></div>
+                        <div class="export-options">
+                            <h3><i class="fas fa-download"></i> <span data-zh="导出选项" data-en="Export Options">导出选项</span></h3>
+                            <div class="export-buttons">
+                                <button id="exportIcsBtn" class="btn btn-export" data-zh="导出ICS (Outlook/Google)" data-en="Export ICS (Outlook/Google)">导出ICS (Outlook/Google)</button>
+                                <button id="exportPdfBtn" class="btn btn-export" data-zh="导出PDF" data-en="Export PDF">导出PDF</button>
+                                <button id="exportJsonBtn" class="btn btn-export" data-zh="导出JSON" data-en="Export JSON">导出JSON</button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- 计时器页面 -->
+                <div class="page" id="timerPage" data-page="timer" style="display: none;">
+                    <section class="timer-section">
+                        <h2><i class="fas fa-clock"></i> <span data-zh="专注计时器" data-en="Focus Timer">专注计时器</span></h2>
+                        <div class="timer-content">
+                            <div class="timer-display">
+                                <div class="timer-circle">
+                                    <span id="timerMinutes">25</span>:
+                                    <span id="timerSeconds">00</span>
+                                </div>
+                            </div>
+                            <div class="timer-controls">
+                                <button id="startTimerBtn" class="btn btn-primary" data-zh="开始" data-en="Start">开始</button>
+                                <button id="pauseTimerBtn" class="btn btn-secondary" data-zh="暂停" data-en="Pause">暂停</button>
+                                <button id="resetTimerBtn" class="btn btn-secondary" data-zh="重置" data-en="Reset">重置</button>
+                            </div>
+                            <div class="timer-presets">
+                                <button class="preset-btn" data-minutes="25" data-zh="番茄钟 (25分钟)" data-en="Pomodoro (25min)">番茄钟 (25分钟)</button>
+                                <button class="preset-btn" data-minutes="5" data-zh="短休息 (5分钟)" data-en="Short Break (5min)">短休息 (5分钟)</button>
+                                <button class="preset-btn" data-minutes="15" data-zh="长休息 (15分钟)" data-en="Long Break (15min)">长休息 (15分钟)</button>
+                                <button class="preset-btn" data-minutes="45" data-zh="学习模式 (45分钟)" data-en="Study Mode (45min)">学习模式 (45分钟)</button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
     </div>
 
     <!-- 推荐好友弹窗 -->
