@@ -12,7 +12,7 @@ let milestones = JSON.parse(localStorage.getItem('milestones')) || [];
 let userPoints = parseInt(localStorage.getItem('userPoints')) || 0;
 let lastLoginDate = localStorage.getItem('lastLoginDate') || null;
 let isRegistered = localStorage.getItem('isRegistered') === 'true';
-let referralCount = parseInt(localStorage.getItem('referralCount')) || 0;
+
 
 // 积分规则配置
 const POINT_RULES = {
@@ -20,7 +20,7 @@ const POINT_RULES = {
     DAILY_LOGIN: 15,       // 每日首次登录
     TASK_COMPLETION: 3,    // 完成每日清单一条
     MILESTONE_COMPLETION: 20, // 完成里程碑
-    REFERRAL: 18          // 推荐好友
+    POMODORO_COMPLETION: 5, // 完成番茄时间
 };
 
 // 多目标管理系统
@@ -75,7 +75,7 @@ const milestoneInput = document.getElementById('milestoneInput');
 const milestoneDate = document.getElementById('milestoneDate');
 const addMilestoneBtn = document.getElementById('addMilestoneBtn');
 const milestoneList = document.getElementById('milestoneList');
-const exportIcsBtn = document.getElementById('exportIcsBtn');
+
 const exportPdfBtn = document.getElementById('exportPdfBtn');
 const exportJsonBtn = document.getElementById('exportJsonBtn');
 const progressPathSvg = document.querySelector('.progress-path-svg');
@@ -89,8 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadGoal();
     loadTasks();
     loadMilestones();
-    updateProgress();
-    generateCalendar();
+
     updateCheckinStatus();
     initializeLanguage();
     initializeAuth();
@@ -101,13 +100,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializePointsSystem(); // 初始化积分系统
     initializeMultiGoalSystem(); // 初始化多目标系统
     updateTimeStats(); // 初始化时间统计
-    
-    // 初始化推荐系统
-    checkReferralCode();
-    processReferralReward();
-    
-    // 初始化背景系统
-    initializeBackgroundSystem();
     
     // 设置今天的日期为默认截止日期
     const today = new Date();
@@ -353,7 +345,6 @@ function toggleTask(taskId) {
         
         saveTasks();
         renderTasks();
-        updateProgress();
     }
 }
 
@@ -361,7 +352,6 @@ function deleteTask(taskId) {
     tasks = tasks.filter(t => t.id !== taskId);
     saveTasks();
     renderTasks();
-    updateProgress();
 }
 
 function saveTasks() {
@@ -516,8 +506,7 @@ checkinBtn.addEventListener('click', function() {
     
     localStorage.setItem('checkinData', JSON.stringify(checkinData));
     updateCheckinStatus();
-    updateProgress();
-    generateCalendar();
+    
     
     // 添加打卡成功的视觉反馈
     const successText = currentLanguage === 'zh' ? '打卡成功！' : 'Check-in Success!';
@@ -545,280 +534,13 @@ function updateCheckinStatus() {
     updateCheckinStatusText();
 }
 
-// 进度分析
-function updateProgress() {
-    const totalDaysElement = document.getElementById('totalDays');
-    const checkedDaysElement = document.getElementById('checkedDays');
-    const completionRateElement = document.getElementById('completionRate');
-    const progressFill = document.getElementById('progressFill');
-    
-    // 获取当前目标
-    const currentGoal = getCurrentGoal();
-    
-    if (!currentGoal) {
-        totalDaysElement.textContent = '0';
-        checkedDaysElement.textContent = '0';
-        completionRateElement.textContent = '0%';
-        progressFill.style.width = '0%';
-        updateProgressByCategory();
-        return;
-    }
-    
-    const startDate = new Date(currentGoal.startDate || new Date().toISOString());
-    const deadline = new Date(currentGoal.deadline);
-    const now = new Date();
-    const totalDays = Math.ceil((deadline - startDate) / (1000 * 60 * 60 * 24));
-    
-    // 计算当前目标的打卡天数
-    const goalCheckedDays = Object.keys(checkinData).filter(date => {
-        const checkDate = new Date(date);
-        return checkDate >= startDate && checkDate <= deadline;
-    }).length;
-    
-    const completionRate = totalDays > 0 ? Math.round((goalCheckedDays / totalDays) * 100) : 0;
-    
-    totalDaysElement.textContent = totalDays;
-    checkedDaysElement.textContent = goalCheckedDays;
-    completionRateElement.textContent = `${completionRate}%`;
-    
-    // 使用目标颜色更新进度条
-    progressFill.style.width = `${completionRate}%`;
-    progressFill.style.background = `linear-gradient(90deg, ${currentGoal.color}, ${currentGoal.color}aa)`;
-    
-    // 更新分类进度显示
-    updateProgressByCategory();
-    
-    // 更新进度路径
-    updateProgressPath();
-}
 
-// 按类别和优先级显示进度分析
-function updateProgressByCategory() {
-    const progressContainer = document.querySelector('.progress-analysis');
-    if (!progressContainer) return;
-    
-    // 创建或更新分类进度显示区域
-    let categoryProgressDiv = document.getElementById('categoryProgress');
-    if (!categoryProgressDiv) {
-        categoryProgressDiv = document.createElement('div');
-        categoryProgressDiv.id = 'categoryProgress';
-        categoryProgressDiv.className = 'category-progress';
-        progressContainer.appendChild(categoryProgressDiv);
-    }
-    
-    // 按优先级排序目标
-    const sortedGoals = getGoalsByPriority();
-    
-    if (sortedGoals.length === 0) {
-        categoryProgressDiv.innerHTML = '<p class="no-goals">暂无学习目标</p>';
-        return;
-    }
-    
-    let html = '<h4>目标进度分析</h4>';
-    
-    // 按优先级分组显示
-    const priorityGroups = {
-        HIGH: sortedGoals.filter(g => g.priority === 'HIGH'),
-        MEDIUM: sortedGoals.filter(g => g.priority === 'MEDIUM'),
-        LOW: sortedGoals.filter(g => g.priority === 'LOW')
-    };
-    
-    Object.entries(priorityGroups).forEach(([priority, goals]) => {
-        if (goals.length === 0) return;
-        
-        const priorityInfo = PRIORITY_LEVELS[priority];
-        html += `
-            <div class="priority-group" data-priority="${priority}">
-                <h5 class="priority-header" style="color: ${priorityInfo.color}">
-                    ${priorityInfo.icon} ${priorityInfo.name}
-                </h5>
-                <div class="goals-progress">
-        `;
-        
-        goals.forEach(goal => {
-            const progress = calculateGoalProgress(goal);
-            const category = PRESET_CATEGORIES[goal.category] || { name: goal.category, color: goal.color, icon: '📋' };
-            
-            html += `
-                <div class="goal-progress-item" data-goal-id="${goal.id}">
-                    <div class="goal-info">
-                        <span class="goal-icon" style="color: ${category.color}">${category.icon}</span>
-                        <span class="goal-title">${goal.title}</span>
-                        <span class="goal-category" style="background: ${category.color}20; color: ${category.color}">
-                            ${category.name}
-                        </span>
-                    </div>
-                    <div class="goal-progress-bar">
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar-fill" 
-                                 style="width: ${progress.percentage}%; background: ${goal.color}"></div>
-                        </div>
-                        <span class="progress-text">${progress.percentage}%</span>
-                    </div>
-                    <div class="goal-stats">
-                        <span class="stat-item">${progress.completedDays}/${progress.totalDays} 天</span>
-                        <span class="stat-item">${progress.remainingDays} 天剩余</span>
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += `
-                </div>
-            </div>
-        `;
-    });
-    
-    categoryProgressDiv.innerHTML = html;
-}
 
-// 计算单个目标的进度
-function calculateGoalProgress(goal) {
-    const startDate = new Date(goal.startDate || goal.createdAt);
-    const deadline = new Date(goal.deadline);
-    const now = new Date();
-    
-    const totalDays = Math.ceil((deadline - startDate) / (1000 * 60 * 60 * 24));
-    const passedDays = Math.ceil((now - startDate) / (1000 * 60 * 60 * 24));
-    const remainingDays = Math.max(0, Math.ceil((deadline - now) / (1000 * 60 * 60 * 24)));
-    
-    // 计算该目标相关的打卡天数
-    const completedDays = Object.keys(checkinData).filter(date => {
-        const checkDate = new Date(date);
-        return checkDate >= startDate && checkDate <= deadline;
-    }).length;
-    
-    const percentage = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
-    
-    return {
-        totalDays,
-        completedDays,
-        remainingDays,
-        percentage,
-        isExpired: now > deadline
-    };
-}
 
-// 日历功能
-function generateCalendar() {
-    const calendar = document.getElementById('calendar');
-    calendar.innerHTML = '';
-    
-    // 添加星期标题
-    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-    weekdays.forEach(day => {
-        const dayElement = document.createElement('div');
-        dayElement.className = 'calendar-header';
-        dayElement.textContent = day;
-        calendar.appendChild(dayElement);
-    });
-    
-    // 获取当前月份信息
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = firstDay.getDay();
-    
-    // 添加空白日期
-    for (let i = 0; i < startDate; i++) {
-        const emptyDay = document.createElement('div');
-        emptyDay.className = 'calendar-day';
-        calendar.appendChild(emptyDay);
-    }
-    
-    // 获取所有目标用于日期标记
-    const allGoals = learningGoals || [];
-    
-    // 添加月份日期
-    for (let day = 1; day <= lastDay.getDate(); day++) {
-        const dayElement = document.createElement('div');
-        dayElement.className = 'calendar-day';
-        dayElement.textContent = day;
-        
-        const currentDate = new Date(year, month, day);
-        const dateString = currentDate.toDateString();
-        
-        // 检查是否已打卡
-        if (checkinData[dateString]) {
-            dayElement.classList.add('checked');
-            
-            // 为打卡日期添加目标相关的颜色标记
-            const activeGoalsOnDate = getActiveGoalsOnDate(currentDate);
-            if (activeGoalsOnDate.length > 0) {
-                // 按优先级排序，使用最高优先级目标的颜色
-                const sortedGoals = activeGoalsOnDate.sort((a, b) => {
-                    const priorityA = PRIORITY_LEVELS[a.priority]?.value || 0;
-                    const priorityB = PRIORITY_LEVELS[b.priority]?.value || 0;
-                    return priorityB - priorityA;
-                });
-                
-                const primaryGoal = sortedGoals[0];
-                dayElement.style.setProperty('--goal-color', primaryGoal.color);
-                dayElement.classList.add('has-goal');
-                
-                // 如果有多个目标，添加多目标标记
-                if (activeGoalsOnDate.length > 1) {
-                    dayElement.classList.add('multi-goals');
-                    
-                    // 创建目标指示器
-                    const goalIndicators = document.createElement('div');
-                    goalIndicators.className = 'goal-indicators';
-                    
-                    activeGoalsOnDate.slice(0, 3).forEach(goal => {
-                        const indicator = document.createElement('div');
-                        indicator.className = 'goal-indicator';
-                        indicator.style.backgroundColor = goal.color;
-                        indicator.title = goal.title;
-                        goalIndicators.appendChild(indicator);
-                    });
-                    
-                    if (activeGoalsOnDate.length > 3) {
-                        const moreIndicator = document.createElement('div');
-                        moreIndicator.className = 'goal-indicator more';
-                        moreIndicator.textContent = `+${activeGoalsOnDate.length - 3}`;
-                        moreIndicator.title = `还有${activeGoalsOnDate.length - 3}个目标`;
-                        goalIndicators.appendChild(moreIndicator);
-                    }
-                    
-                    dayElement.appendChild(goalIndicators);
-                }
-                
-                // 添加目标信息到tooltip
-                const goalTitles = activeGoalsOnDate.map(g => g.title).join(', ');
-                dayElement.title = `已打卡 - 目标: ${goalTitles}`;
-            }
-        } else {
-            // 未打卡但有活跃目标的日期
-            const activeGoalsOnDate = getActiveGoalsOnDate(currentDate);
-            if (activeGoalsOnDate.length > 0) {
-                dayElement.classList.add('has-pending-goals');
-                const goalTitles = activeGoalsOnDate.map(g => g.title).join(', ');
-                dayElement.title = `待打卡 - 目标: ${goalTitles}`;
-            }
-        }
-        
-        // 标记今天
-        if (day === now.getDate() && month === now.getMonth() && year === now.getFullYear()) {
-            dayElement.classList.add('today');
-        }
-        
-        // 添加点击事件显示当日目标详情
-        dayElement.addEventListener('click', () => showDayGoalDetails(currentDate, activeGoalsOnDate || []));
-        
-        calendar.appendChild(dayElement);
-    }
-}
 
-// 获取指定日期的活跃目标
-function getActiveGoalsOnDate(date) {
-    return learningGoals.filter(goal => {
-        const goalStart = new Date(goal.startDate || goal.createdAt);
-        const goalEnd = new Date(goal.deadline);
-        return date >= goalStart && date <= goalEnd;
-    });
-}
+
+
+
 
 // 显示当日目标详情
 function showDayGoalDetails(date, goals) {
@@ -1048,9 +770,6 @@ function renderMilestones() {
         
         milestoneList.appendChild(milestoneElement);
     });
-    
-    // 更新进度路径
-    updateProgressPath();
 }
 
 function createMilestoneMarker(milestone, index, x, y) {
@@ -1233,7 +952,6 @@ function toggleMilestone(milestoneId) {
         
         saveMilestones();
         renderMilestones();
-        updateProgressPath();
     }
 }
 
@@ -1252,7 +970,6 @@ function saveMilestones() {
 
 function loadMilestones() {
     renderMilestones();
-    updateProgressPath();
 }
 
 // 进度路径可视化相关变量（更新现有变量）
@@ -1345,773 +1062,71 @@ function getUserId() {
     return userId;
 }
 
-// 生成邀请链接
-function generateReferralLink() {
-    const userId = getUserId();
-    const baseUrl = window.location.origin + window.location.pathname;
-    return `${baseUrl}?ref=${userId}`;
-}
 
-// 推荐好友功能
-function shareReferralLink() {
-    const referralLink = generateReferralLink();
-    
-    // 创建分享弹窗
-    const modal = document.createElement('div');
-    modal.className = 'referral-modal';
-    modal.innerHTML = `
-        <div class="referral-modal-content">
-            <div class="referral-modal-header">
-                <h3>邀请好友一起学习</h3>
-                <button class="close-modal" onclick="closeReferralModal()">&times;</button>
-            </div>
-            <div class="referral-modal-body">
-                <p>分享这个链接给好友，好友注册成功后你将获得 <strong>${POINT_RULES.REFERRAL} 积分</strong> 奖励！</p>
-                <div class="referral-link-container">
-                    <input type="text" id="referralLinkInput" value="${referralLink}" readonly>
-                    <button onclick="copyReferralLink()" class="copy-btn">复制链接</button>
-                </div>
-                <div class="referral-stats">
-                    <p>已成功推荐: <span class="referral-count">${referralCount}</span> 人</p>
-                    <p>累计获得: <span class="referral-points">${referralCount * POINT_RULES.REFERRAL}</span> 积分</p>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // 添加点击外部关闭功能
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeReferralModal();
-        }
-    });
-}
 
-// 复制邀请链接
-function copyReferralLink() {
-    const input = document.getElementById('referralLinkInput');
-    input.select();
-    document.execCommand('copy');
-    
-    // 显示复制成功提示
-    const copyBtn = document.querySelector('.copy-btn');
-    const originalText = copyBtn.textContent;
-    copyBtn.textContent = '已复制!';
-    copyBtn.style.background = '#4CAF50';
-    
-    setTimeout(() => {
-        copyBtn.textContent = originalText;
-        copyBtn.style.background = '';
-    }, 2000);
-}
 
-// 关闭推荐弹窗
-function closeReferralModal() {
-    const modal = document.querySelector('.referral-modal');
-    if (modal) {
-        modal.remove();
-    }
-}
 
-// 检查是否通过邀请链接访问
-function checkReferralCode() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const referralCode = urlParams.get('ref');
-    
-    if (referralCode && !localStorage.getItem('hasRegistered')) {
-        localStorage.setItem('referralCode', referralCode);
-        // 显示欢迎消息
-        showReferralWelcome();
-    }
-}
 
-// 显示推荐欢迎消息
-function showReferralWelcome() {
-    const welcomeDiv = document.createElement('div');
-    welcomeDiv.className = 'referral-welcome';
-    welcomeDiv.innerHTML = `
-        <div class="welcome-content">
-            <h3>🎉 欢迎通过好友邀请加入！</h3>
-            <p>完成注册后，你和推荐人都将获得积分奖励！</p>
-            <button onclick="closeWelcome()" class="welcome-close">知道了</button>
-        </div>
-    `;
-    
-    document.body.appendChild(welcomeDiv);
-    
-    // 3秒后自动关闭
-    setTimeout(() => {
-        closeWelcome();
-    }, 5000);
-}
 
-// 关闭欢迎消息
-function closeWelcome() {
-    const welcome = document.querySelector('.referral-welcome');
-    if (welcome) {
-        welcome.remove();
-    }
-}
 
-// 处理新用户注册奖励
-function processReferralReward() {
-    const referralCode = localStorage.getItem('referralCode');
-    if (referralCode && !localStorage.getItem('hasRegistered')) {
-        // 标记用户已注册
-        localStorage.setItem('hasRegistered', 'true');
-        
-        // 给推荐人增加积分（这里模拟，实际应该通过服务器处理）
-        // 在实际应用中，这应该通过API调用来处理
-        
-        // 给新用户奖励
-        awardPoints(POINT_RULES.REGISTRATION, '新用户注册奖励');
-        
-        // 显示注册成功消息
-        showPointsNotification(POINT_RULES.REGISTRATION, '注册成功！欢迎加入学习计划！');
-        
-        // 清除推荐码
-        localStorage.removeItem('referralCode');
-    }
-}
 
-// 显示推荐好友模态框
-function showReferralModal() {
-    const userPoints = parseInt(localStorage.getItem('userPoints')) || 0;
-    const referralCount = parseInt(localStorage.getItem('referralCount')) || 0;
-    const referralLink = generateReferralLink();
-    
-    let modalContent = '<div class="referral-modal">';
-    
-    // 推荐好友概览
-    modalContent += `
-        <div class="referral-overview">
-            <h3>🎉 邀请好友一起学习</h3>
-            <div class="referral-benefits">
-                <div class="benefit-card">
-                    <div class="benefit-icon">🎁</div>
-                    <div class="benefit-info">
-                        <div class="benefit-title">推荐奖励</div>
-                        <div class="benefit-desc">每成功推荐一位好友获得 <strong>${POINT_RULES.REFERRAL || 50}</strong> 积分</div>
-                    </div>
-                </div>
-                <div class="benefit-card">
-                    <div class="benefit-icon">👥</div>
-                    <div class="benefit-info">
-                        <div class="benefit-title">双重奖励</div>
-                        <div class="benefit-desc">你和好友都能获得注册奖励积分</div>
-                    </div>
-                </div>
-                <div class="benefit-card">
-                    <div class="benefit-icon">🏆</div>
-                    <div class="benefit-info">
-                        <div class="benefit-title">成就解锁</div>
-                        <div class="benefit-desc">推荐越多好友，解锁更多专属成就</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // 分享链接区域
-    modalContent += `
-        <div class="referral-share">
-            <h3>📤 分享你的专属链接</h3>
-            <div class="share-link-container">
-                <div class="link-display">
-                    <input type="text" id="referralLinkInput" value="${referralLink}" readonly>
-                    <button class="copy-link-btn" onclick="copyReferralLink()">
-                        <i class="fas fa-copy"></i>
-                        <span>复制链接</span>
-                    </button>
-                </div>
-                <div class="share-buttons">
-                    <button class="share-btn wechat" onclick="shareToWeChat()">
-                        <i class="fab fa-weixin"></i>
-                        <span>微信分享</span>
-                    </button>
-                    <button class="share-btn qq" onclick="shareToQQ()">
-                        <i class="fab fa-qq"></i>
-                        <span>QQ分享</span>
-                    </button>
-                    <button class="share-btn weibo" onclick="shareToWeibo()">
-                        <i class="fab fa-weibo"></i>
-                        <span>微博分享</span>
-                    </button>
-                    <button class="share-btn email" onclick="shareByEmail()">
-                        <i class="fas fa-envelope"></i>
-                        <span>邮件分享</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // 推荐统计
-    modalContent += `
-        <div class="referral-stats">
-            <h3>📊 我的推荐统计</h3>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-icon">👥</div>
-                    <div class="stat-value">${referralCount}</div>
-                    <div class="stat-label">成功推荐</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-icon">⭐</div>
-                    <div class="stat-value">${referralCount * (POINT_RULES.REFERRAL || 50)}</div>
-                    <div class="stat-label">推荐积分</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-icon">🎯</div>
-                    <div class="stat-value">${Math.min(referralCount, 10)}/10</div>
-                    <div class="stat-label">推荐达人</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-icon">🏅</div>
-                    <div class="stat-value">${getReferralLevel(referralCount)}</div>
-                    <div class="stat-label">推荐等级</div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // 推荐记录
-    const referralHistory = getReferralHistory();
-    modalContent += `
-        <div class="referral-history">
-            <h3>📋 推荐记录</h3>
-            <div class="history-list">
-    `;
-    
-    if (referralHistory.length === 0) {
-        modalContent += '<div class="no-referrals">还没有成功推荐过好友，快去邀请你的朋友一起学习吧！</div>';
-    } else {
-        referralHistory.slice(0, 5).forEach((record, index) => {
-            const date = new Date(record.date).toLocaleDateString('zh-CN');
-            modalContent += `
-                <div class="referral-record">
-                    <div class="record-avatar">
-                        <i class="fas fa-user-circle"></i>
-                    </div>
-                    <div class="record-info">
-                        <div class="record-name">好友 #${index + 1}</div>
-                        <div class="record-date">${date} 注册成功</div>
-                    </div>
-                    <div class="record-reward">
-                        <span class="reward-points">+${POINT_RULES.REFERRAL || 50}</span>
-                        <span class="reward-icon">⭐</span>
-                    </div>
-                </div>
-            `;
-        });
-        
-        if (referralHistory.length > 5) {
-            modalContent += `<div class="more-records">还有 ${referralHistory.length - 5} 条记录...</div>`;
-        }
-    }
-    
-    modalContent += '</div></div>';
-    
-    // 推荐小贴士
-    modalContent += `
-        <div class="referral-tips">
-            <h3>💡 推荐小贴士</h3>
-            <div class="tips-list">
-                <div class="tip-item">
-                    <div class="tip-icon">🎯</div>
-                    <div class="tip-text">向有学习需求的朋友推荐，成功率更高</div>
-                </div>
-                <div class="tip-item">
-                    <div class="tip-icon">💬</div>
-                    <div class="tip-text">分享时说明这个学习工具的优势和特色</div>
-                </div>
-                <div class="tip-item">
-                    <div class="tip-icon">🤝</div>
-                    <div class="tip-text">可以和朋友一起制定学习计划，互相监督</div>
-                </div>
-                <div class="tip-item">
-                    <div class="tip-icon">🏆</div>
-                    <div class="tip-text">推荐10位好友可解锁"推荐达人"成就</div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    modalContent += '</div>';
-    
-    showModal('推荐好友', modalContent);
-}
 
-// 复制推荐链接
-function copyReferralLink() {
-    const input = document.getElementById('referralLinkInput');
-    if (input) {
-        input.select();
-        input.setSelectionRange(0, 99999); // 移动端兼容
-        
-        try {
-            document.execCommand('copy');
-            
-            // 更新按钮状态
-            const copyBtn = document.querySelector('.copy-link-btn');
-            if (copyBtn) {
-                const originalHTML = copyBtn.innerHTML;
-                copyBtn.innerHTML = '<i class="fas fa-check"></i><span>已复制</span>';
-                copyBtn.style.background = '#4CAF50';
-                
-                setTimeout(() => {
-                    copyBtn.innerHTML = originalHTML;
-                    copyBtn.style.background = '';
-                }, 2000);
-            }
-            
-            showPointsNotification(0, '链接已复制到剪贴板！');
-        } catch (err) {
-            console.error('复制失败:', err);
-            showPointsNotification(0, '复制失败，请手动复制链接');
-        }
-    }
-}
 
-// 分享到微信
-function shareToWeChat() {
-    const link = generateReferralLink();
-    const text = `我在使用一个很棒的学习助手工具，推荐给你！通过我的链接注册，我们都能获得积分奖励哦~ ${link}`;
-    
-    // 尝试调用微信分享API（需要在微信环境中）
-    if (typeof WeixinJSBridge !== 'undefined') {
-        WeixinJSBridge.invoke('sendAppMessage', {
-            title: '学习助手 - 高效学习工具',
-            desc: '一起来制定学习计划，提高学习效率吧！',
-            link: link,
-            imgUrl: window.location.origin + '/icon.png'
-        });
-    } else {
-        // 复制文本到剪贴板
-        navigator.clipboard.writeText(text).then(() => {
-            showPointsNotification(0, '分享内容已复制，请粘贴到微信发送给好友！');
-        }).catch(() => {
-            showPointsNotification(0, '请手动复制链接分享给好友');
-        });
-    }
-}
 
-// 分享到QQ
-function shareToQQ() {
-    const link = generateReferralLink();
-    const title = encodeURIComponent('学习助手 - 高效学习工具');
-    const summary = encodeURIComponent('一起来制定学习计划，提高学习效率吧！');
-    const qqShareUrl = `https://connect.qq.com/widget/shareqq/index.html?url=${encodeURIComponent(link)}&title=${title}&summary=${summary}`;
-    
-    window.open(qqShareUrl, '_blank', 'width=600,height=400');
-}
 
-// 分享到微博
-function shareToWeibo() {
-    const link = generateReferralLink();
-    const text = encodeURIComponent(`我在使用一个很棒的学习助手工具，推荐给你！通过我的链接注册，我们都能获得积分奖励哦~ ${link}`);
-    const weiboShareUrl = `https://service.weibo.com/share/share.php?url=${encodeURIComponent(link)}&title=${text}`;
-    
-    window.open(weiboShareUrl, '_blank', 'width=600,height=400');
-}
 
-// 邮件分享
-function shareByEmail() {
-    const link = generateReferralLink();
-    const subject = encodeURIComponent('推荐一个很棒的学习助手工具');
-    const body = encodeURIComponent(`Hi！\n\n我最近在使用一个很棒的学习助手工具，可以帮助制定学习计划、追踪学习进度，还有番茄钟等实用功能。\n\n通过我的专属链接注册，我们都能获得积分奖励：\n${link}\n\n一起来提高学习效率吧！`);
-    
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-}
 
-// 获取推荐等级
-function getReferralLevel(count) {
-    if (count >= 50) return '推荐大师';
-    if (count >= 20) return '推荐专家';
-    if (count >= 10) return '推荐达人';
-    if (count >= 5) return '推荐能手';
-    if (count >= 1) return '推荐新手';
-    return '待推荐';
-}
 
-// 获取推荐历史记录
-function getReferralHistory() {
-    return JSON.parse(localStorage.getItem('referralHistory')) || [];
-}
 
-// 添加推荐记录
-function addReferralRecord(friendInfo) {
-    const history = getReferralHistory();
-    const record = {
-        id: Date.now(),
-        date: new Date().toISOString(),
-        friendInfo: friendInfo || {},
-        reward: POINT_RULES.REFERRAL || 50
-    };
-    
-    history.unshift(record);
-    localStorage.setItem('referralHistory', JSON.stringify(history));
-    
-    // 更新推荐计数
-    const currentCount = parseInt(localStorage.getItem('referralCount')) || 0;
-    localStorage.setItem('referralCount', currentCount + 1);
-    
-    // 给予推荐奖励
-    awardPoints(POINT_RULES.REFERRAL || 50, '成功推荐好友');
-}
 
-// 旧的推荐好友函数（保持兼容性）
-function addReferralPoints() {
-    showReferralModal();
-}
 
-// 背景商店系统
-const BACKGROUND_THEMES = {
-    default: {
-        name: '默认森林',
-        price: 0,
-        preview: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        unlocked: true,
-        description: '经典的森林主题背景'
-    },
-    ocean: {
-        name: '深海蓝调',
-        price: 500,
-        preview: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-        unlocked: false,
-        description: '宁静的深海主题'
-    },
-    sunset: {
-        name: '日落黄昏',
-        price: 800,
-        preview: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%)',
-        unlocked: false,
-        description: '温暖的日落色彩'
-    },
-    galaxy: {
-        name: '星河银河',
-        price: 1000,
-        preview: 'linear-gradient(135deg, #434343 0%, black 100%)',
-        unlocked: false,
-        description: '神秘的银河系主题'
-    },
-    spring: {
-        name: '春日樱花',
-        price: 600,
-        preview: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-        unlocked: false,
-        description: '清新的春日樱花'
-    },
-    winter: {
-        name: '冬日雪景',
-        price: 700,
-        preview: 'linear-gradient(135deg, #e6ddd4 0%, #d5def5 100%)',
-        unlocked: false,
-        description: '纯净的冬日雪景'
-    },
-    aurora: {
-        name: '极光绚烂',
-        price: 1200,
-        preview: 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)',
-        unlocked: false,
-        description: '绚烂的极光色彩'
-    },
-    desert: {
-        name: '沙漠黄昏',
-        price: 900,
-        preview: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-        unlocked: false,
-        description: '壮丽的沙漠黄昏'
-    }
-};
 
-let currentBackground = localStorage.getItem('currentBackground') || 'default';
-let ownedBackgrounds = JSON.parse(localStorage.getItem('ownedBackgrounds')) || ['default'];
 
-// 打开背景商店
-function openBackgroundShop() {
-    const modal = document.getElementById('backgroundShopModal');
-    const pointsDisplay = document.getElementById('shopPointsDisplay');
-    
-    // 更新积分显示
-    pointsDisplay.textContent = userPoints;
-    
-    // 渲染背景选项
-    renderBackgroundGrid();
-    
-    // 显示弹窗
-    modal.classList.add('show');
-    
-    // 初始化商店标签事件
-    initializeShopTabs();
-    
-    // 初始化自定义上传功能
-    initializeCustomUpload();
-}
 
-// 关闭背景商店
-function closeBackgroundShop() {
-    const modal = document.getElementById('backgroundShopModal');
-    modal.classList.remove('show');
-}
 
-// 初始化商店标签
-function initializeShopTabs() {
-    const tabs = document.querySelectorAll('.shop-tab');
-    const panels = document.querySelectorAll('.tab-panel');
-    
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const targetTab = tab.dataset.tab;
-            
-            // 切换标签状态
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            
-            // 切换面板显示
-            panels.forEach(panel => {
-                panel.classList.remove('active');
-                if (panel.id === targetTab + 'Backgrounds' || panel.id === targetTab + 'Background') {
-                    panel.classList.add('active');
-                }
-            });
-        });
-    });
-}
 
-// 渲染背景网格
-function renderBackgroundGrid() {
-    const grid = document.getElementById('backgroundGrid');
-    grid.innerHTML = '';
-    
-    Object.entries(BACKGROUND_THEMES).forEach(([key, theme]) => {
-        const item = document.createElement('div');
-        item.className = 'background-item';
-        
-        // 检查解锁状态
-        const isOwned = ownedBackgrounds.includes(key);
-        const totalEarned = getTotalEarnedPoints();
-        const needsUnlock = theme.price >= 1000 && totalEarned < 1000;
-        const isLocked = !isOwned && (userPoints < theme.price || needsUnlock);
-        const isCurrent = currentBackground === key;
-        
-        if (isLocked) item.classList.add('locked');
-        if (isCurrent) item.classList.add('selected');
-        
-        item.innerHTML = `
-            <div class="background-preview" style="background: ${theme.preview}"></div>
-            <div class="background-info">
-                <div class="background-name">${theme.name}</div>
-                <div class="background-price">
-                    ${isOwned ? (isCurrent ? '使用中' : '已拥有') : 
-                      needsUnlock ? `需要1000积分解锁` : `${theme.price} ⭐`}
-                </div>
-            </div>
-            <div class="background-status ${
-                isCurrent ? 'status-current' : isOwned ? 'status-owned' : 'status-locked'
-            }">
-                ${isCurrent ? '当前' : isOwned ? '已拥有' : '锁定'}
-            </div>
-            ${isLocked ? '<div class="lock-overlay">🔒</div>' : ''}
-        `;
-        
-        // 添加点击事件
-        if (!isLocked) {
-            item.addEventListener('click', () => {
-                if (isOwned) {
-                    // 切换背景
-                    switchBackground(key);
-                } else {
-                    // 购买背景
-                    purchaseBackground(key, theme);
-                }
-            });
-        }
-        
-        grid.appendChild(item);
-    });
-}
 
-// 购买背景
-function purchaseBackground(key, theme) {
-    // 检查是否达到1000积分解锁条件
-    if (theme.price >= 1000) {
-        const totalEarnedPoints = getTotalEarnedPoints();
-        if (totalEarnedPoints < 1000) {
-            alert(`需要累计获得1000积分才能解锁高级背景！\n当前累计积分：${totalEarnedPoints}\n还需要：${1000 - totalEarnedPoints} 积分`);
-            return;
-        }
-    }
-    
-    if (userPoints >= theme.price) {
-        // 扣除积分
-        userPoints -= theme.price;
-        localStorage.setItem('userPoints', userPoints);
-        
-        // 添加到已拥有列表
-        ownedBackgrounds.push(key);
-        localStorage.setItem('ownedBackgrounds', JSON.stringify(ownedBackgrounds));
-        
-        // 更新显示
-        updatePointsDisplay();
-        renderBackgroundGrid();
-        
-        // 显示购买成功消息
-        showPointsNotification(-theme.price, `成功购买 ${theme.name}！`);
-        
-        // 自动切换到新背景
-        switchBackground(key);
-    } else {
-        alert(`积分不足！需要 ${theme.price} 积分，当前只有 ${userPoints} 积分。`);
-    }
-}
 
-// 获取累计获得的积分总数
-function getTotalEarnedPoints() {
-    return parseInt(localStorage.getItem('totalEarnedPoints')) || 0;
-}
 
-// 更新累计积分记录
-function updateTotalEarnedPoints(points) {
-    const currentTotal = getTotalEarnedPoints();
-    const newTotal = currentTotal + points;
-    localStorage.setItem('totalEarnedPoints', newTotal);
-    return newTotal;
-}
 
-// 切换背景
-function switchBackground(key) {
-    currentBackground = key;
-    localStorage.setItem('currentBackground', key);
-    
-    // 应用背景
-    applyBackground(key);
-    
-    // 更新网格显示
-    renderBackgroundGrid();
-    
-    // 显示切换成功消息
-    showPointsNotification(0, `已切换到 ${BACKGROUND_THEMES[key].name}`);
-}
 
-// 应用背景
-function applyBackground(key) {
-    const theme = BACKGROUND_THEMES[key];
-    if (theme) {
-        document.body.style.background = theme.preview;
-    }
-}
 
-// 初始化自定义上传功能
-function initializeCustomUpload() {
-    const uploadZone = document.getElementById('uploadZone');
-    const uploadInput = document.getElementById('backgroundUpload');
-    
-    // 点击上传
-    uploadZone.addEventListener('click', () => {
-        uploadInput.click();
-    });
-    
-    // 文件选择
-    uploadInput.addEventListener('change', handleFileUpload);
-    
-    // 拖拽上传
-    uploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadZone.classList.add('dragover');
-    });
-    
-    uploadZone.addEventListener('dragleave', () => {
-        uploadZone.classList.remove('dragover');
-    });
-    
-    uploadZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadZone.classList.remove('dragover');
-        
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            handleFileUpload({ target: { files } });
-        }
-    });
-}
 
-// 处理文件上传
-function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    // 检查文件类型
-    if (!file.type.startsWith('image/')) {
-        alert('请选择图片文件！');
-        return;
-    }
-    
-    // 检查文件大小（限制5MB）
-    if (file.size > 5 * 1024 * 1024) {
-        alert('文件大小不能超过5MB！');
-        return;
-    }
-    
-    // 读取文件
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const imageData = e.target.result;
-        
-        // 保存自定义背景
-        const customKey = 'custom_' + Date.now();
-        const customTheme = {
-            name: '自定义背景',
-            price: 0,
-            preview: `url(${imageData})`,
-            unlocked: true,
-            description: '用户上传的自定义背景',
-            isCustom: true
-        };
-        
-        // 添加到背景主题
-        BACKGROUND_THEMES[customKey] = customTheme;
-        
-        // 添加到已拥有列表
-        if (!ownedBackgrounds.includes(customKey)) {
-            ownedBackgrounds.push(customKey);
-            localStorage.setItem('ownedBackgrounds', JSON.stringify(ownedBackgrounds));
-        }
-        
-        // 保存自定义背景数据
-        const customBackgrounds = JSON.parse(localStorage.getItem('customBackgrounds')) || {};
-        customBackgrounds[customKey] = customTheme;
-        localStorage.setItem('customBackgrounds', JSON.stringify(customBackgrounds));
-        
-        // 切换到自定义背景
-        switchBackground(customKey);
-        
-        // 切换到预设背景标签以显示新背景
-        document.querySelector('[data-tab="preset"]').click();
-        
-        alert('自定义背景上传成功！');
-    };
-    
-    reader.readAsDataURL(file);
-}
 
-// 初始化背景系统
-function initializeBackgroundSystem() {
-    // 加载自定义背景
-    const customBackgrounds = JSON.parse(localStorage.getItem('customBackgrounds')) || {};
-    Object.assign(BACKGROUND_THEMES, customBackgrounds);
-    
-    // 应用当前背景
-    applyBackground(currentBackground);
-    
-    // 确保默认背景在已拥有列表中
-    if (!ownedBackgrounds.includes('default')) {
-        ownedBackgrounds.push('default');
-        localStorage.setItem('ownedBackgrounds', JSON.stringify(ownedBackgrounds));
-    }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // 多目标管理函数
 function createLearningGoal(title, deadline, category, priority, customTags = [], color = null) {
@@ -2427,7 +1442,7 @@ function updateCurrentGoalDisplay() {
         </div>
         <div class="goal-details">
             <div class="goal-info-row">
-                <span><i class="fas fa-calendar"></i> 截止日期: ${new Date(currentGoal.deadline).toLocaleDateString()}</span>
+                <span><i class="fas fa-clock"></i> 截止日期: ${new Date(currentGoal.deadline).toLocaleDateString()}</span>
                 <span><i class="fas fa-tag"></i> ${category ? category.icon + ' ' + category.name : '其他'}</span>
                 <span style="color: ${priority.color}">${priority.icon} ${priority.name}</span>
             </div>
@@ -2461,11 +1476,9 @@ function initializeProgressPath() {
         startAnimationLoop();
     }
     
-    updateProgressPath();
-    
     // 监听任务和里程碑变化
     const observer = new MutationObserver(() => {
-        updateProgressPath();
+        // Progress path functionality removed
     });
     
     observer.observe(document.getElementById('taskList'), { childList: true, subtree: true });
@@ -2792,9 +1805,13 @@ function showMilestoneDetails(milestone) {
 
 // 多格式导出功能
 function initializeExport() {
-    exportJsonBtn.addEventListener('click', exportJSON);
-    exportIcsBtn.addEventListener('click', exportICS);
-    exportPdfBtn.addEventListener('click', exportPDF);
+    if (exportJsonBtn) {
+        exportJsonBtn.addEventListener('click', exportJSON);
+    }
+    
+    if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', exportPDF);
+    }
 }
 
 function exportJSON() {
@@ -2823,78 +1840,7 @@ function exportJSON() {
     alert(alertText);
 }
 
-function exportICS() {
-    let icsContent = [
-        'BEGIN:VCALENDAR',
-        'VERSION:2.0',
-        'PRODID:-//Just Do it//Learning Plan//EN',
-        'CALSCALE:GREGORIAN',
-        'METHOD:PUBLISH'
-    ];
-    
-    // 添加学习目标截止日期
-    if (currentGoal && deadline) {
-        const goalEvent = [
-            'BEGIN:VEVENT',
-            `UID:goal-${Date.now()}@justdoit.com`,
-            `DTSTART:${formatDateForICS(deadline)}`,
-            `DTEND:${formatDateForICS(deadline)}`,
-            `SUMMARY:${currentGoal} - 截止日期`,
-            `DESCRIPTION:学习目标截止日期`,
-            'STATUS:CONFIRMED',
-            'END:VEVENT'
-        ];
-        icsContent = icsContent.concat(goalEvent);
-    }
-    
-    // 添加里程碑
-    milestones.forEach(milestone => {
-        const milestoneEvent = [
-            'BEGIN:VEVENT',
-            `UID:milestone-${milestone.id}@justdoit.com`,
-            `DTSTART:${formatDateForICS(new Date(milestone.date))}`,
-            `DTEND:${formatDateForICS(new Date(milestone.date))}`,
-            `SUMMARY:里程碑: ${milestone.title}`,
-            `DESCRIPTION:学习计划里程碑`,
-            `STATUS:${milestone.completed ? 'COMPLETED' : 'CONFIRMED'}`,
-            'END:VEVENT'
-        ];
-        icsContent = icsContent.concat(milestoneEvent);
-    });
-    
-    // 添加打卡记录
-    Object.keys(checkinData).forEach(dateStr => {
-        if (checkinData[dateStr]) {
-            const checkinEvent = [
-                'BEGIN:VEVENT',
-                `UID:checkin-${dateStr}@justdoit.com`,
-                `DTSTART:${formatDateForICS(new Date(dateStr))}`,
-                `DTEND:${formatDateForICS(new Date(dateStr))}`,
-                'SUMMARY:学习打卡',
-                'DESCRIPTION:每日学习打卡记录',
-                'STATUS:COMPLETED',
-                'END:VEVENT'
-            ];
-            icsContent = icsContent.concat(checkinEvent);
-        }
-    });
-    
-    icsContent.push('END:VCALENDAR');
-    
-    const icsBlob = new Blob([icsContent.join('\r\n')], {type: 'text/calendar'});
-    const url = URL.createObjectURL(icsBlob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `学习计划_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.ics`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    const alertText = currentLanguage === 'zh' ? 'ICS日历文件已导出！可导入到Outlook、Google日历等' : 'ICS calendar file exported! Can be imported to Outlook, Google Calendar, etc.';
-    alert(alertText);
-}
+
 
 function exportPDF() {
     // 创建PDF内容
@@ -2913,9 +1859,7 @@ function exportPDF() {
     alert(alertText);
 }
 
-function formatDateForICS(date) {
-    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-}
+
 
 function generatePDFContent() {
     const title = currentLanguage === 'zh' ? '学习计划报告' : 'Learning Plan Report';
@@ -3400,8 +2344,10 @@ class PageRouter {
             'goals': 'goalsPage',
             'tasks': 'tasksPage', 
             'progress': 'progressPage',
-            'calendar': 'calendarPage',
-            'timer': 'timerPage'
+
+            'timer': 'timerPage',
+            'referral': 'referralPage',
+            'shop': 'shopPage'
         };
         this.init();
         this.loadSavedPage();
@@ -3443,18 +2389,49 @@ class PageRouter {
 
     setupSidebarToggle() {
         const toggleBtn = document.querySelector('.sidebar-toggle');
+        const lockBtn = document.querySelector('.sidebar-lock');
         const sidebar = document.querySelector('.sidebar');
+        
+        // 从localStorage加载锁定状态
+        const isLocked = localStorage.getItem('sidebarLocked') === 'true';
+        if (isLocked && sidebar && lockBtn) {
+            sidebar.classList.add('locked');
+            lockBtn.classList.add('locked');
+        }
         
         if (toggleBtn && sidebar) {
             toggleBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('open');
+                // 如果侧边栏被锁定，则不允许切换
+                if (!sidebar.classList.contains('locked')) {
+                    sidebar.classList.toggle('open');
+                }
+            });
+        }
+        
+        // 锁定按钮事件
+        if (lockBtn && sidebar) {
+            lockBtn.addEventListener('click', () => {
+                const isCurrentlyLocked = sidebar.classList.contains('locked');
+                
+                if (isCurrentlyLocked) {
+                    // 解锁侧边栏
+                    sidebar.classList.remove('locked');
+                    lockBtn.classList.remove('locked');
+                    localStorage.setItem('sidebarLocked', 'false');
+                } else {
+                    // 锁定侧边栏
+                    sidebar.classList.add('locked');
+                    sidebar.classList.add('open'); // 锁定时自动展开
+                    lockBtn.classList.add('locked');
+                    localStorage.setItem('sidebarLocked', 'true');
+                }
             });
         }
 
-        // 点击主内容区域时关闭侧边栏（移动端）
+        // 点击主内容区域时关闭侧边栏（移动端且未锁定时）
         document.querySelector('.main-wrapper')?.addEventListener('click', () => {
-            if (window.innerWidth <= 768) {
-                sidebar?.classList.remove('open');
+            if (window.innerWidth <= 768 && sidebar && !sidebar.classList.contains('locked')) {
+                sidebar.classList.remove('open');
             }
         });
     }
@@ -3503,7 +2480,7 @@ class PageRouter {
             item.classList.remove('active');
         });
         
-        const activeLink = document.querySelector(`[data-page="${this.currentPage}"]`);
+        const activeLink = document.querySelector(`.menu-link[data-page="${this.currentPage}"]`);
         if (activeLink) {
             activeLink.closest('.menu-item').classList.add('active');
         }
@@ -3520,22 +2497,12 @@ class PageRouter {
                 }, 100);
                 break;
             case 'progress':
-                // 更新进度数据
+                // 设置进度分析页面事件
                 setTimeout(() => {
-                    updateProgress();
-                    updateProgressByCategory();
                     setupProgressPageEvents(); // 设置进度分析页面事件
                 }, 100);
                 break;
-            case 'calendar':
-                // 初始化学习日历页面
-                setTimeout(() => {
-                    updateCalendarDisplay();
-                    updateCalendarStats();
-                    updateGoalProgress();
-                    setupCalendarPageEvents(); // 设置学习日历页面事件
-                }, 100);
-                break;
+
             case 'timer':
                 // 初始化计时器页面
                 setTimeout(() => {
@@ -3550,6 +2517,19 @@ class PageRouter {
                 setTimeout(() => {
                     renderGoalSelector();
                     updateCurrentGoalDisplay();
+                    setupGoalFormEvents(); // 设置目标管理页面事件
+                }, 100);
+                break;
+            case 'referral':
+                // 初始化推荐好友页面
+                setTimeout(() => {
+                    updateReferralPageContent();
+                }, 100);
+                break;
+            case 'shop':
+                // 初始化背景商店页面
+                setTimeout(() => {
+                    updateShopPageContent();
                 }, 100);
                 break;
             default:
@@ -3600,10 +2580,6 @@ class SettingsManager {
         // 应用语言设置
         currentLanguage = this.settings.language;
         
-        // 应用背景设置
-        currentBackground = this.settings.currentBackground;
-        applyBackground(currentBackground);
-        
         // 应用当前目标设置
         if (this.settings.currentGoalId) {
             currentGoalId = this.settings.currentGoalId;
@@ -3626,22 +2602,55 @@ let pageRouter;
 // Pomodoro计时器类
 class PomodoroTimer {
     constructor() {
-        this.workTime = 25 * 60; // 25分钟
-        this.breakTime = 5 * 60; // 5分钟
-        this.currentTime = this.workTime;
+        this.focusTime = 25 * 60; // 25分钟
+        this.shortBreak = 5 * 60; // 5分钟
+        this.longBreak = 15 * 60; // 15分钟
+        this.longBreakInterval = 4; // 每4个番茄后长休息
+        this.currentTime = this.focusTime;
+        this.totalTime = this.focusTime;
         this.isRunning = false;
         this.isWorkSession = true;
         this.timer = null;
+        this.completedPomodoros = 0;
+        this.sessionStartTime = null;
+        this.loadSettings();
         this.updateDisplay();
+        this.updateProgressRing();
+    }
+
+    loadSettings() {
+        const settings = JSON.parse(localStorage.getItem('pomodoroSettings')) || {};
+        this.focusTime = (settings.focusTime || 25) * 60;
+        this.shortBreak = (settings.shortBreak || 5) * 60;
+        this.longBreak = (settings.longBreak || 15) * 60;
+        this.longBreakInterval = settings.longBreakInterval || 4;
+        
+        if (!this.isRunning) {
+            this.currentTime = this.focusTime;
+            this.totalTime = this.focusTime;
+        }
+    }
+
+    saveSettings() {
+        const settings = {
+            focusTime: Math.floor(this.focusTime / 60),
+            shortBreak: Math.floor(this.shortBreak / 60),
+            longBreak: Math.floor(this.longBreak / 60),
+            longBreakInterval: this.longBreakInterval
+        };
+        localStorage.setItem('pomodoroSettings', JSON.stringify(settings));
     }
 
     start() {
         if (this.isRunning) return;
         
         this.isRunning = true;
+        this.sessionStartTime = new Date();
+        
         this.timer = setInterval(() => {
             this.currentTime--;
             this.updateDisplay();
+            this.updateProgressRing();
             
             if (this.currentTime <= 0) {
                 this.complete();
@@ -3649,6 +2658,7 @@ class PomodoroTimer {
         }, 1000);
         
         this.updateControls();
+        this.recordPomodoroStart();
     }
 
     pause() {
@@ -3659,50 +2669,77 @@ class PomodoroTimer {
 
     reset() {
         this.pause();
-        this.currentTime = this.isWorkSession ? this.workTime : this.breakTime;
+        this.currentTime = this.isWorkSession ? this.focusTime : 
+            (this.completedPomodoros % this.longBreakInterval === 0 && this.completedPomodoros > 0) ? 
+            this.longBreak : this.shortBreak;
+        this.totalTime = this.currentTime;
         this.updateDisplay();
-    }
-
-    setTime(seconds) {
-        if (!this.isRunning) {
-            this.currentTime = seconds;
-            this.updateDisplay();
-        }
+        this.updateProgressRing();
     }
 
     complete() {
         this.pause();
         
         if (this.isWorkSession) {
-            this.showNotification('工作时间结束!', '是时候休息一下了');
-            awardPoints(POINT_RULES.TASK_COMPLETION, '完成专注时间');
+            this.completedPomodoros++;
+            this.recordPomodoroComplete();
+            this.showNotification('专注时间完成!', '恭喜完成一个番茄时钟！');
+            awardPoints(5, '完成番茄时钟');
+            
+            // 决定下一个是短休息还是长休息
+            const isLongBreak = this.completedPomodoros % this.longBreakInterval === 0;
+            this.currentTime = isLongBreak ? this.longBreak : this.shortBreak;
+            this.totalTime = this.currentTime;
         } else {
-            this.showNotification('休息时间结束!', '准备开始下一轮工作');
+            this.showNotification('休息时间结束!', '准备开始下一轮专注！');
+            this.currentTime = this.focusTime;
+            this.totalTime = this.focusTime;
         }
         
         this.isWorkSession = !this.isWorkSession;
-        this.currentTime = this.isWorkSession ? this.workTime : this.breakTime;
         this.updateDisplay();
+        this.updateProgressRing();
+        this.updateStats();
     }
 
     updateDisplay() {
         const minutes = Math.floor(this.currentTime / 60);
         const seconds = this.currentTime % 60;
         const timeDisplay = document.getElementById('timerDisplay');
-        const sessionType = document.getElementById('sessionType');
+        const timerMode = document.getElementById('timerMode');
         
         if (timeDisplay) {
             timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
         
-        if (sessionType) {
-            sessionType.textContent = this.isWorkSession ? '工作时间' : '休息时间';
+        if (timerMode) {
+            if (this.isWorkSession) {
+                timerMode.textContent = currentLanguage === 'zh' ? '专注时间' : 'Focus Time';
+            } else {
+                const isLongBreak = this.completedPomodoros % this.longBreakInterval === 0 && this.completedPomodoros > 0;
+                timerMode.textContent = currentLanguage === 'zh' ? 
+                    (isLongBreak ? '长休息' : '短休息') : 
+                    (isLongBreak ? 'Long Break' : 'Short Break');
+            }
         }
     }
 
+    updateProgressRing() {
+        const circle = document.querySelector('.progress-ring-circle');
+        if (!circle) return;
+        
+        const radius = 140;
+        const circumference = 2 * Math.PI * radius;
+        const progress = (this.totalTime - this.currentTime) / this.totalTime;
+        const offset = circumference - (progress * circumference);
+        
+        circle.style.strokeDasharray = circumference;
+        circle.style.strokeDashoffset = offset;
+    }
+
     updateControls() {
-        const startBtn = document.getElementById('startTimer');
-        const pauseBtn = document.getElementById('pauseTimer');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
         
         if (startBtn && pauseBtn) {
             startBtn.style.display = this.isRunning ? 'none' : 'inline-block';
@@ -3710,10 +2747,225 @@ class PomodoroTimer {
         }
     }
 
+    updateStats() {
+        const stats = this.getTodayStats();
+        
+        const completedElement = document.getElementById('completedPomodoros');
+        const focusTimeElement = document.getElementById('totalFocusTime');
+        const streakElement = document.getElementById('currentStreak');
+        
+        if (completedElement) {
+            completedElement.textContent = stats.completed;
+        }
+        
+        if (focusTimeElement) {
+            const hours = Math.floor(stats.focusTime / 3600);
+            const minutes = Math.floor((stats.focusTime % 3600) / 60);
+            focusTimeElement.textContent = `${hours}h ${minutes}m`;
+        }
+        
+        if (streakElement) {
+            streakElement.textContent = this.getStreak();
+        }
+    }
+
+    getTodayStats() {
+        const today = new Date().toDateString();
+        const records = JSON.parse(localStorage.getItem('pomodoroRecords')) || [];
+        const todayRecords = records.filter(record => 
+            new Date(record.date).toDateString() === today
+        );
+        
+        return {
+            completed: todayRecords.length,
+            focusTime: todayRecords.reduce((total, record) => total + (record.duration || this.focusTime), 0)
+        };
+    }
+
+    getStreak() {
+        const records = JSON.parse(localStorage.getItem('pomodoroRecords')) || [];
+        if (records.length === 0) return 0;
+        
+        const dates = [...new Set(records.map(record => new Date(record.date).toDateString()))];
+        dates.sort((a, b) => new Date(b) - new Date(a));
+        
+        let streak = 0;
+        const today = new Date();
+        
+        for (let i = 0; i < dates.length; i++) {
+            const date = new Date(dates[i]);
+            const daysDiff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+            
+            if (daysDiff === i) {
+                streak++;
+            } else {
+                break;
+            }
+        }
+        
+        return streak;
+    }
+
+    recordPomodoroStart() {
+        // 记录开始时间，用于统计
+        this.sessionStartTime = new Date();
+    }
+
+    recordPomodoroComplete() {
+        const userId = getUserId();
+        const userKey = `pomodoroRecords_${userId}`;
+        const records = JSON.parse(localStorage.getItem(userKey)) || [];
+        const record = {
+            id: Date.now(),
+            date: new Date().toISOString(),
+            duration: this.focusTime,
+            type: 'focus',
+            userId: userId
+        };
+        
+        records.push(record);
+        localStorage.setItem(userKey, JSON.stringify(records));
+        
+        // 更新用户统计数据
+        this.updateUserStats();
+        
+        // 更新历史记录显示
+        this.updateHistoryDisplay();
+        
+        // 给予积分奖励
+        awardPoints(POINT_RULES.POMODORO_COMPLETION || 5, '完成番茄时间');
+    }
+    
+    updateUserStats() {
+        const userId = getUserId();
+        const statsKey = `pomodoroStats_${userId}`;
+        const stats = JSON.parse(localStorage.getItem(statsKey)) || {
+            totalPomodoros: 0,
+            totalFocusTime: 0,
+            streakDays: 0,
+            lastCompletionDate: null
+        };
+        
+        stats.totalPomodoros += 1;
+        stats.totalFocusTime += this.focusTime;
+        
+        // 更新连胜天数
+        const today = new Date().toDateString();
+        if (stats.lastCompletionDate === today) {
+            // 今天已经完成过，不更新连胜
+        } else if (stats.lastCompletionDate === new Date(Date.now() - 86400000).toDateString()) {
+            // 昨天完成过，连胜+1
+            stats.streakDays += 1;
+        } else {
+            // 中断了连胜，重新开始
+            stats.streakDays = 1;
+        }
+        stats.lastCompletionDate = today;
+        
+        localStorage.setItem(statsKey, JSON.stringify(stats));
+        
+        // 更新页面显示
+        this.updateStatsDisplay(stats);
+    }
+    
+    updateStatsDisplay(stats) {
+        const completedPomodorosEl = document.getElementById('completedPomodoros');
+        const totalTimeEl = document.getElementById('totalFocusTime');
+        const streakDaysEl = document.getElementById('streakDays');
+        
+        if (completedPomodorosEl) {
+            completedPomodorosEl.textContent = stats.totalPomodoros;
+        }
+        if (totalTimeEl) {
+            const hours = Math.floor(stats.totalFocusTime / 3600);
+            const minutes = Math.floor((stats.totalFocusTime % 3600) / 60);
+            totalTimeEl.textContent = `${hours}h ${minutes}m`;
+        }
+        if (streakDaysEl) {
+            streakDaysEl.textContent = stats.streakDays;
+        }
+    }
+    
+    loadUserStats() {
+        const userId = getUserId();
+        const statsKey = `pomodoroStats_${userId}`;
+        const stats = JSON.parse(localStorage.getItem(statsKey)) || {
+            totalPomodoros: 0,
+            totalFocusTime: 0,
+            streakDays: 0,
+            lastCompletionDate: null
+        };
+        
+        this.updateStatsDisplay(stats);
+        return stats;
+    }
+
+    updateHistoryDisplay() {
+        const historyContainer = document.getElementById('pomodoroHistory');
+        if (!historyContainer) return;
+        
+        const userId = getUserId();
+        const userKey = `pomodoroRecords_${userId}`;
+        const records = JSON.parse(localStorage.getItem(userKey)) || [];
+        const today = new Date().toDateString();
+        const todayRecords = records.filter(record => 
+            new Date(record.date).toDateString() === today
+        ).slice(-5); // 显示最近5条记录
+        
+        historyContainer.innerHTML = '';
+        
+        if (todayRecords.length === 0) {
+            historyContainer.innerHTML = `<p class="no-records">${currentLanguage === 'zh' ? '今日暂无记录' : 'No records today'}</p>`;
+            return;
+        }
+        
+        todayRecords.forEach(record => {
+            const recordElement = document.createElement('div');
+            recordElement.className = 'history-item';
+            const time = new Date(record.date).toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            recordElement.innerHTML = `
+                <div class="record-time">${time}</div>
+                <div class="record-type">${currentLanguage === 'zh' ? '专注时间' : 'Focus Session'}</div>
+                <div class="record-duration">${Math.floor(record.duration / 60)}${currentLanguage === 'zh' ? '分钟' : 'min'}</div>
+            `;
+            historyContainer.appendChild(recordElement);
+        });
+    }
+
     showNotification(title, message) {
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification(title, { body: message });
         }
+        
+        // 显示页面内通知
+        this.showPageNotification(title, message);
+    }
+
+    showPageNotification(title, message) {
+        const notification = document.createElement('div');
+        notification.className = 'pomodoro-notification';
+        notification.innerHTML = `
+            <div class="notification-content">
+                <h4>${title}</h4>
+                <p>${message}</p>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+        
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
     }
 }
 
@@ -3727,9 +2979,11 @@ function initializeTimer() {
     window.pomodoroTimer = new PomodoroTimer();
     
     // 绑定控制按钮事件
-    const startBtn = document.getElementById('timerStart');
-    const pauseBtn = document.getElementById('timerPause');
-    const resetBtn = document.getElementById('timerReset');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const saveSettingsBtn = document.getElementById('saveSettings');
     
     if (startBtn) {
         startBtn.addEventListener('click', () => window.pomodoroTimer.start());
@@ -3740,21 +2994,114 @@ function initializeTimer() {
     if (resetBtn) {
         resetBtn.addEventListener('click', () => window.pomodoroTimer.reset());
     }
-    
-    // 绑定预设按钮事件
-    document.querySelectorAll('.preset-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const preset = btn.getAttribute('data-preset');
-            if (window.pomodoroTimer.presets[preset]) {
-                window.pomodoroTimer.setTime(window.pomodoroTimer.presets[preset]);
-            }
-        });
-    });
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => togglePomodoroSettings());
+    }
+    if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', () => savePomodoroSettings());
+    }
     
     // 请求通知权限
     if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
     }
+    
+    // 初始化统计数据
+    window.pomodoroTimer.loadUserStats();
+    window.pomodoroTimer.updateStats();
+    window.pomodoroTimer.updateHistoryDisplay();
+}
+
+// 切换番茄计时器设置面板
+function togglePomodoroSettings() {
+    const settingsPanel = document.querySelector('.pomodoro-settings');
+    if (settingsPanel) {
+        const isHidden = settingsPanel.style.display === 'none' || !settingsPanel.style.display;
+        settingsPanel.style.display = isHidden ? 'block' : 'none';
+        
+        if (isHidden) {
+            // 加载当前设置到表单
+            loadPomodoroSettingsForm();
+        }
+    }
+}
+
+// 加载设置到表单
+function loadPomodoroSettingsForm() {
+    const settings = JSON.parse(localStorage.getItem('pomodoroSettings')) || {};
+    
+    const focusInput = document.getElementById('focusTimeInput');
+    const shortBreakInput = document.getElementById('shortBreakInput');
+    const longBreakInput = document.getElementById('longBreakInput');
+    const intervalInput = document.getElementById('longBreakIntervalInput');
+    
+    if (focusInput) focusInput.value = settings.focusTime || 25;
+    if (shortBreakInput) shortBreakInput.value = settings.shortBreak || 5;
+    if (longBreakInput) longBreakInput.value = settings.longBreak || 15;
+    if (intervalInput) intervalInput.value = settings.longBreakInterval || 4;
+}
+
+// 保存番茄计时器设置
+function savePomodoroSettings() {
+    const focusInput = document.getElementById('focusTimeInput');
+    const shortBreakInput = document.getElementById('shortBreakInput');
+    const longBreakInput = document.getElementById('longBreakInput');
+    const intervalInput = document.getElementById('longBreakIntervalInput');
+    
+    const focusTime = parseInt(focusInput?.value) || 25;
+    const shortBreak = parseInt(shortBreakInput?.value) || 5;
+    const longBreak = parseInt(longBreakInput?.value) || 15;
+    const longBreakInterval = parseInt(intervalInput?.value) || 4;
+    
+    const settings = {
+        focusTime,
+        shortBreak,
+        longBreak,
+        longBreakInterval
+    };
+    
+    localStorage.setItem('pomodoroSettings', JSON.stringify(settings));
+    
+    // 重新加载设置到计时器
+    if (window.pomodoroTimer) {
+        window.pomodoroTimer.loadSettings();
+        window.pomodoroTimer.reset();
+    }
+    
+    // 隐藏设置面板
+    const settingsPanel = document.getElementById('pomodoroSettings');
+    if (settingsPanel) {
+        settingsPanel.style.display = 'none';
+    }
+    
+    showMessage(currentLanguage === 'zh' ? '设置已保存' : 'Settings saved', 'success');
+}
+
+// 显示消息提示
+function showMessage(message, type = 'info') {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}`;
+    messageDiv.textContent = message;
+    messageDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: ${type === 'success' ? '#4CAF50' : '#2196F3'};
+        color: white;
+        border-radius: 4px;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(messageDiv);
+    
+    setTimeout(() => {
+        messageDiv.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(messageDiv);
+        }, 300);
+    }, 2000);
 }
 
 // 设置每日清单页面事件
@@ -4098,16 +3445,8 @@ function showTaskProgressModal() {
     showModal('任务进度分析', modalContent);
 }
 
-// 设置学习日历页面事件
-function setupCalendarPageEvents() {
-    const calendarTitle = document.querySelector('#calendarPage h2');
-    if (calendarTitle && !calendarTitle.hasAttribute('data-click-setup')) {
-        calendarTitle.style.cursor = 'pointer';
-        calendarTitle.title = '点击查看日历任务清单';
-        calendarTitle.addEventListener('click', showCalendarTasksModal);
-        calendarTitle.setAttribute('data-click-setup', 'true');
-    }
-}
+
+
 
 // 设置计时器页面事件
 function setupTimerPageEvents() {
@@ -4420,153 +3759,8 @@ function getTodayPomodoroRecords() {
     }).reverse(); // 最新的在前
 }
 
-// 显示日历任务清单模态框
-function showCalendarTasksModal() {
-    const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-    const checkinData = JSON.parse(localStorage.getItem('checkinData') || '{}');
-    
-    if (allTasks.length === 0) {
-        showModal('日历任务清单', '<div class="no-data-message">暂无任务数据，请先添加任务</div>');
-        return;
-    }
-    
-    // 按日期分组任务
-    const tasksByDate = {};
-    allTasks.forEach(task => {
-        const date = task.date;
-        if (!tasksByDate[date]) {
-            tasksByDate[date] = [];
-        }
-        tasksByDate[date].push(task);
-    });
-    
-    // 按日期排序（最新的在前）
-    const sortedDates = Object.keys(tasksByDate).sort((a, b) => new Date(b) - new Date(a));
-    
-    let modalContent = '<div class="calendar-tasks-modal">';
-    
-    // 添加日历概览统计
-    const totalDays = sortedDates.length;
-    const checkedDays = Object.keys(checkinData).length;
-    const totalTasks = allTasks.length;
-    const completedTasks = allTasks.filter(task => task.completed).length;
-    
-    modalContent += `
-        <div class="calendar-overview">
-            <h3>📊 日历概览</h3>
-            <div class="overview-stats">
-                <div class="overview-stat">
-                    <div class="stat-icon">📅</div>
-                    <div class="stat-info">
-                        <div class="stat-value">${totalDays}</div>
-                        <div class="stat-label">活跃天数</div>
-                    </div>
-                </div>
-                <div class="overview-stat">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-info">
-                        <div class="stat-value">${checkedDays}</div>
-                        <div class="stat-label">打卡天数</div>
-                    </div>
-                </div>
-                <div class="overview-stat">
-                    <div class="stat-icon">📋</div>
-                    <div class="stat-info">
-                        <div class="stat-value">${totalTasks}</div>
-                        <div class="stat-label">总任务数</div>
-                    </div>
-                </div>
-                <div class="overview-stat">
-                    <div class="stat-icon">🎯</div>
-                    <div class="stat-info">
-                        <div class="stat-value">${completedTasks}</div>
-                        <div class="stat-label">已完成</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // 显示每日任务清单
-    modalContent += '<div class="daily-tasks-section"><h3>📋 每日任务清单</h3>';
-    
-    sortedDates.slice(0, 10).forEach(date => { // 只显示最近10天
-        const tasks = tasksByDate[date];
-        const dateObj = new Date(date);
-        const isToday = dateObj.toDateString() === new Date().toDateString();
-        const isCheckedIn = checkinData[date];
-        
-        const dayCompletedTasks = tasks.filter(task => task.completed).length;
-        const dayTotalTasks = tasks.length;
-        const dayProgressPercent = dayTotalTasks > 0 ? Math.round((dayCompletedTasks / dayTotalTasks) * 100) : 0;
-        const dayTotalTime = tasks.reduce((sum, task) => sum + (task.totalTime || 0), 0);
-        
-        modalContent += `
-            <div class="daily-task-group ${isToday ? 'today' : ''} ${isCheckedIn ? 'checked-in' : ''}">
-                <div class="daily-task-header">
-                    <div class="date-info">
-                        <div class="date-main">
-                            <span class="date-text">${dateObj.toLocaleDateString()}</span>
-                            <span class="weekday">${['周日', '周一', '周二', '周三', '周四', '周五', '周六'][dateObj.getDay()]}</span>
-                            ${isToday ? '<span class="today-badge">今天</span>' : ''}
-                            ${isCheckedIn ? '<span class="checkin-badge">已打卡</span>' : ''}
-                        </div>
-                        <div class="date-stats">
-                            <span class="task-count">${dayCompletedTasks}/${dayTotalTasks} 任务</span>
-                            <span class="progress-percent">${dayProgressPercent}%</span>
-                            <span class="total-time">${formatTime(dayTotalTime)}</span>
-                        </div>
-                    </div>
-                    <div class="day-progress-bar">
-                        <div class="day-progress-fill" style="width: ${dayProgressPercent}%"></div>
-                    </div>
-                </div>
-                <div class="daily-task-list">
-        `;
-        
-        tasks.forEach(task => {
-            const timeDisplay = formatTime(task.totalTime || 0);
-            const completedClass = task.completed ? 'completed' : '';
-            const statusIcon = task.completed ? '✅' : '⏳';
-            const isRunning = task.isRunning ? 'running' : '';
-            
-            modalContent += `
-                <div class="calendar-task-item ${completedClass} ${isRunning}">
-                    <div class="task-status-icon">${statusIcon}</div>
-                    <div class="task-content">
-                        <div class="task-text">${task.text}</div>
-                        <div class="task-meta">
-                            <span class="task-time">${timeDisplay}</span>
-                            ${task.isRunning ? '<span class="running-indicator">⏱️ 进行中</span>' : ''}
-                            ${task.sessions && task.sessions.length > 0 ? `<span class="session-count">${task.sessions.length} 次会话</span>` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        
-        modalContent += '</div></div>';
-    });
-    
-    modalContent += '</div>';
-    
-    // 添加快速操作区域
-    modalContent += `
-        <div class="calendar-actions">
-            <h3>🚀 快速操作</h3>
-            <div class="action-buttons">
-                <button class="action-btn" onclick="navigateToTasks()">📝 添加任务</button>
-                <button class="action-btn" onclick="navigateToGoals()">🎯 管理目标</button>
-                <button class="action-btn" onclick="exportCalendarData()">📤 导出数据</button>
-                <button class="action-btn" onclick="showCalendarStats()">📊 查看统计</button>
-            </div>
-        </div>
-    `;
-    
-    modalContent += '</div>';
-    
-    showModal('日历任务清单', modalContent);
-}
+
+
 
 // 快速导航函数
 function navigateToTasks() {
@@ -4585,323 +3779,12 @@ function navigateToGoals() {
     }
 }
 
-function showCalendarStats() {
-    const modal = document.querySelector('.modal-overlay');
-    if (modal) modal.remove();
-    
-    // 显示详细统计信息
-    const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-    const checkinData = JSON.parse(localStorage.getItem('checkinData') || '{}');
-    
-    let statsContent = '<div class="calendar-stats-modal">';
-    
-    // 计算连续打卡天数
-    const checkinDates = Object.keys(checkinData).sort((a, b) => new Date(b) - new Date(a));
-    let currentStreak = 0;
-    let longestStreak = 0;
-    let tempStreak = 0;
-    
-    const today = new Date();
-    for (let i = 0; i < 30; i++) {
-        const checkDate = new Date(today);
-        checkDate.setDate(today.getDate() - i);
-        const dateStr = checkDate.toDateString();
-        
-        if (checkinData[dateStr]) {
-            if (i === 0 || tempStreak > 0) {
-                tempStreak++;
-                if (i === 0) currentStreak = tempStreak;
-            }
-        } else {
-            if (tempStreak > longestStreak) longestStreak = tempStreak;
-            if (i > 0) tempStreak = 0;
-        }
-    }
-    
-    if (tempStreak > longestStreak) longestStreak = tempStreak;
-    
-    const weeklyTasks = allTasks.filter(task => {
-        const taskDate = new Date(task.date);
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return taskDate >= weekAgo;
-    });
-    
-    const monthlyTasks = allTasks.filter(task => {
-        const taskDate = new Date(task.date);
-        const monthAgo = new Date();
-        monthAgo.setDate(monthAgo.getDate() - 30);
-        return taskDate >= monthAgo;
-    });
-    
-    statsContent += `
-        <div class="stats-grid">
-            <div class="stat-card large">
-                <div class="stat-icon">🔥</div>
-                <div class="stat-info">
-                    <div class="stat-value">${currentStreak}</div>
-                    <div class="stat-label">当前连续打卡</div>
-                </div>
-            </div>
-            <div class="stat-card large">
-                <div class="stat-icon">🏆</div>
-                <div class="stat-info">
-                    <div class="stat-value">${longestStreak}</div>
-                    <div class="stat-label">最长连续打卡</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📅</div>
-                <div class="stat-info">
-                    <div class="stat-value">${weeklyTasks.length}</div>
-                    <div class="stat-label">本周任务</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📊</div>
-                <div class="stat-info">
-                    <div class="stat-value">${monthlyTasks.length}</div>
-                    <div class="stat-label">本月任务</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">✅</div>
-                <div class="stat-info">
-                    <div class="stat-value">${weeklyTasks.filter(t => t.completed).length}</div>
-                    <div class="stat-label">本周完成</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">⏱️</div>
-                <div class="stat-info">
-                    <div class="stat-value">${formatTime(weeklyTasks.reduce((sum, task) => sum + (task.totalTime || 0), 0))}</div>
-                    <div class="stat-label">本周时长</div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    statsContent += '</div>';
-    
-    showModal('日历统计详情', statsContent);
-}
-
-// 学习日历相关变量
-let currentCalendarDate = new Date();
-let calendarStats = {
-    totalDays: 0,
-    checkedDays: 0,
-    currentStreak: 0,
-    longestStreak: 0
-};
-
-// 学习日历功能
-function initializeCalendarPage() {
-    updateCalendarDisplay();
-    updateCalendarStats();
-    updateGoalProgress();
-    setupCalendarEvents();
-}
-
-function setupCalendarEvents() {
-    // 月份导航
-    const prevMonthBtn = document.getElementById('prevMonth');
-    const nextMonthBtn = document.getElementById('nextMonth');
-    
-    if (prevMonthBtn) {
-        prevMonthBtn.addEventListener('click', () => {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-            updateCalendarDisplay();
-        });
-    }
-    
-    if (nextMonthBtn) {
-        nextMonthBtn.addEventListener('click', () => {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-            updateCalendarDisplay();
-        });
-    }
-    
-    // 今日按钮
-    const todayBtn = document.getElementById('todayBtn');
-    if (todayBtn) {
-        todayBtn.addEventListener('click', () => {
-            currentCalendarDate = new Date();
-            updateCalendarDisplay();
-        });
-    }
-    
-    // 导出按钮
-    const exportCalendarBtn = document.getElementById('exportCalendarBtn');
-    if (exportCalendarBtn) {
-        exportCalendarBtn.addEventListener('click', exportCalendarData);
-    }
-}
-
-function updateCalendarDisplay() {
-    const monthYearElement = document.getElementById('monthYear');
-    const calendarGrid = document.getElementById('calendarGrid');
-    
-    if (!monthYearElement || !calendarGrid) return;
-    
-    // 更新月份年份显示
-    const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月',
-                       '七月', '八月', '九月', '十月', '十一月', '十二月'];
-    monthYearElement.textContent = `${currentCalendarDate.getFullYear()}年 ${monthNames[currentCalendarDate.getMonth()]}`;
-    
-    // 生成日历网格
-    generateCalendarGrid(calendarGrid);
-}
-
-function generateCalendarGrid(container) {
-    container.innerHTML = '';
-    
-    // 添加星期标题
-    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-    weekdays.forEach(day => {
-        const dayHeader = document.createElement('div');
-        dayHeader.className = 'calendar-day-header';
-        dayHeader.textContent = day;
-        container.appendChild(dayHeader);
-    });
-    
-    // 获取当月第一天和最后一天
-    const firstDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1);
-    const lastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0);
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
-    
-    // 生成42个日期格子（6周）
-    for (let i = 0; i < 42; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        
-        const dayElement = document.createElement('div');
-        dayElement.className = 'calendar-day';
-        
-        // 判断是否为当月日期
-        if (date.getMonth() !== currentCalendarDate.getMonth()) {
-            dayElement.classList.add('other-month');
-        }
-        
-        // 判断是否为今天
-        const today = new Date();
-        if (date.toDateString() === today.toDateString()) {
-            dayElement.classList.add('today');
-        }
-        
-        // 判断是否已打卡
-        const dateStr = date.toISOString().split('T')[0];
-        if (checkinData[dateStr]) {
-            dayElement.classList.add('checked');
-        }
-        
-        dayElement.textContent = date.getDate();
-        
-        // 添加点击事件
-        dayElement.addEventListener('click', () => {
-            toggleDayCheckin(dateStr, dayElement);
-        });
-        
-        container.appendChild(dayElement);
-    }
-}
-
-function toggleDayCheckin(dateStr, element) {
-    if (checkinData[dateStr]) {
-        delete checkinData[dateStr];
-        element.classList.remove('checked');
-    } else {
-        checkinData[dateStr] = {
-            date: dateStr,
-            timestamp: new Date().getTime()
-        };
-        element.classList.add('checked');
-    }
-    
-    localStorage.setItem('checkinData', JSON.stringify(checkinData));
-    updateCalendarStats();
-    updateGoalProgress();
-}
-
-function updateCalendarStats() {
-    const totalDaysElement = document.getElementById('totalDays');
-    const checkedDaysElement = document.getElementById('checkedDays');
-    const currentStreakElement = document.getElementById('currentStreak');
-    const longestStreakElement = document.getElementById('longestStreak');
-    
-    // 计算统计数据
-    const checkedDates = Object.keys(checkinData).sort();
-    calendarStats.totalDays = getDaysSinceStart();
-    calendarStats.checkedDays = checkedDates.length;
-    calendarStats.currentStreak = calculateCurrentStreak(checkedDates);
-    calendarStats.longestStreak = calculateLongestStreak(checkedDates);
-    
-    // 更新显示
-    if (totalDaysElement) totalDaysElement.textContent = calendarStats.totalDays;
-    if (checkedDaysElement) checkedDaysElement.textContent = calendarStats.checkedDays;
-    if (currentStreakElement) currentStreakElement.textContent = calendarStats.currentStreak;
-    if (longestStreakElement) longestStreakElement.textContent = calendarStats.longestStreak;
-}
-
-function getDaysSinceStart() {
-    const currentGoal = getCurrentGoal();
-    if (!currentGoal || !currentGoal.startDate) return 0;
-    
-    const startDate = new Date(currentGoal.startDate);
-    const today = new Date();
-    const diffTime = Math.abs(today - startDate);
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-}
-
-function calculateCurrentStreak(checkedDates) {
-    if (checkedDates.length === 0) return 0;
-    
-    const today = new Date().toISOString().split('T')[0];
-    let streak = 0;
-    let currentDate = new Date();
-    
-    // 从今天开始往前计算连续天数
-    while (true) {
-        const dateStr = currentDate.toISOString().split('T')[0];
-        if (checkedDates.includes(dateStr)) {
-            streak++;
-            currentDate.setDate(currentDate.getDate() - 1);
-        } else {
-            break;
-        }
-    }
-    
-    return streak;
-}
-
-function calculateLongestStreak(checkedDates) {
-    if (checkedDates.length === 0) return 0;
-    
-    let maxStreak = 0;
-    let currentStreak = 1;
-    
-    for (let i = 1; i < checkedDates.length; i++) {
-        const prevDate = new Date(checkedDates[i - 1]);
-        const currDate = new Date(checkedDates[i]);
-        const diffDays = (currDate - prevDate) / (1000 * 60 * 60 * 24);
-        
-        if (diffDays === 1) {
-            currentStreak++;
-        } else {
-            maxStreak = Math.max(maxStreak, currentStreak);
-            currentStreak = 1;
-        }
-    }
-    
-    return Math.max(maxStreak, currentStreak);
-}
-
+// 更新目标进度显示
 function updateGoalProgress() {
-    const goalProgressElement = document.getElementById('goalProgress');
     const goalNameElement = document.getElementById('goalName');
     const goalDeadlineElement = document.getElementById('goalDeadline');
     const progressPercentElement = document.getElementById('progressPercent');
+    const goalProgressElement = document.getElementById('goalProgress');
     
     const currentGoal = getCurrentGoal();
     if (!currentGoal) {
@@ -5032,24 +3915,7 @@ function cancelGoalEdit(goalId) {
     renderGoalSelector();
 }
 
-function exportCalendarData() {
-    const data = {
-        checkinData: checkinData,
-        stats: calendarStats,
-        exportDate: new Date().toISOString(),
-        goals: learningGoals
-    };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `学习日历_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
+
 
 // 全局路由实例
 
@@ -5057,8 +3923,7 @@ function exportCalendarData() {
 document.addEventListener('DOMContentLoaded', function() {
     initializeMultiGoalSystem();
     initializeProgressPath();
-    initializeBackgroundSystem();
-    initializeCalendarPage();
+
     
     // 初始化设置管理器
     settingsManager = new SettingsManager();

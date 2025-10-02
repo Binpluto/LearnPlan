@@ -53,51 +53,32 @@
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <h2 class="sidebar-title" data-zh="学习助手" data-en="Study Helper">学习助手</h2>
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <div class="sidebar-controls">
+                    <button class="sidebar-lock" id="sidebarLock" title="锁定侧边栏">
+                        <i class="fas fa-lock-open"></i>
+                    </button>
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
             </div>
             <ul class="sidebar-menu">
-                <li class="menu-item active" data-page="goals">
-                    <a href="#" class="menu-link">
+                <li class="menu-item active">
+                    <a href="#" class="menu-link" data-page="goals">
                         <i class="fas fa-target"></i>
                         <span class="menu-text" data-zh="目标管理" data-en="Goal Management">目标管理</span>
                     </a>
                 </li>
-                <li class="menu-item" data-page="tasks">
-                    <a href="#" class="menu-link">
+                <li class="menu-item">
+                    <a href="#" class="menu-link" data-page="tasks">
                         <i class="fas fa-list-check"></i>
                         <span class="menu-text" data-zh="每日清单" data-en="Daily Tasks">每日清单</span>
                     </a>
                 </li>
-                <li class="menu-item" data-page="progress">
-                    <a href="#" class="menu-link">
-                        <i class="fas fa-chart-line"></i>
-                        <span class="menu-text" data-zh="进度分析" data-en="Progress Analysis">进度分析</span>
-                    </a>
-                </li>
-                <li class="menu-item" data-page="calendar">
-                    <a href="#" class="menu-link">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span class="menu-text" data-zh="学习日历" data-en="Study Calendar">学习日历</span>
-                    </a>
-                </li>
-                <li class="menu-item" data-page="timer">
-                    <a href="#" class="menu-link">
+                <li class="menu-item">
+                    <a href="#" class="menu-link" data-page="pomodoro">
                         <i class="fas fa-clock"></i>
-                        <span class="menu-text" data-zh="计时器" data-en="Timer">计时器</span>
-                    </a>
-                </li>
-                <li class="menu-item" data-page="referral">
-                    <a href="#" class="menu-link" onclick="showReferralModal()">
-                        <i class="fas fa-user-friends"></i>
-                        <span class="menu-text" data-zh="推荐好友" data-en="Refer Friend">推荐好友</span>
-                    </a>
-                </li>
-                <li class="menu-item" data-page="shop">
-                    <a href="#" class="menu-link" onclick="openBackgroundShop()">
-                        <i class="fas fa-palette"></i>
-                        <span class="menu-text" data-zh="背景商店" data-en="Background Shop">背景商店</span>
+                        <span class="menu-text" data-zh="番茄计时" data-en="Pomodoro Timer">番茄计时</span>
                     </a>
                 </li>
             </ul>
@@ -255,143 +236,84 @@
                     <div id="milestoneList" class="milestone-list"></div>
                 </div>
             </section>
-
-
-
-
-
-
-
-
- 
-
-
-
-
-                <!-- 学习日历页面 -->
-                <div class="page" id="calendarPage" data-page="calendar" style="display: none;">
-                    <section class="calendar-section">
-                        <h2><i class="fas fa-calendar-alt"></i> <span data-zh="学习日历" data-en="Learning Calendar">学习日历</span></h2>
-                        
-                        <!-- 日历月份导航 -->
-                        <div class="calendar-nav">
-                            <button id="prevMonth" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
-                            <h3 id="currentMonth" class="month-title"></h3>
-                            <button id="nextMonth" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
-                        </div>
-                        
-                        <!-- 日历网格 -->
-                        <div id="calendar" class="calendar"></div>
-                        
-                        <!-- 日历统计信息 -->
-                        <div class="calendar-stats">
-                            <div class="stat-card">
-                                <div class="stat-value" id="monthlyCheckins">0</div>
-                                <div class="stat-label" data-zh="本月打卡" data-en="Monthly Check-ins">本月打卡</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value" id="currentStreak">0</div>
-                                <div class="stat-label" data-zh="连续天数" data-en="Current Streak">连续天数</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value" id="longestStreak">0</div>
-                                <div class="stat-label" data-zh="最长连续" data-en="Longest Streak">最长连续</div>
-                            </div>
-                        </div>
-                        
-                        <!-- 目标进度概览 -->
-                        <div class="goals-overview">
-                            <h3><i class="fas fa-target"></i> <span data-zh="目标进度" data-en="Goals Progress">目标进度</span></h3>
-                            <div id="goalsProgressList" class="goals-progress-list"></div>
-                        </div>
-                        
-                        <!-- 日历操作按钮 -->
-                        <div class="calendar-actions">
-                            <button id="exportCalendar" class="btn btn-secondary">
-                                <i class="fas fa-download"></i>
-                                <span data-zh="导出日历" data-en="Export Calendar">导出日历</span>
-                            </button>
-                            <button id="todayBtn" class="btn btn-primary">
-                                <i class="fas fa-calendar-day"></i>
-                                <span data-zh="回到今天" data-en="Go to Today">回到今天</span>
-                            </button>
-                        </div>
-                    </section>
                 </div>
 
-                <!-- 进度分析页面 -->
-                <div class="page" id="progressPage" data-page="progress" style="display: none;">
-                    <section class="progress-analysis-section">
-                        <h2><i class="fas fa-chart-line"></i> <span data-zh="进度分析" data-en="Progress Analysis">进度分析</span></h2>
-                        <div class="progress-stats">
-                            <div class="stat-item">
-                                <span class="stat-number" id="totalDays">0</span>
-                                <span class="stat-label" data-zh="总天数" data-en="Total Days">总天数</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-number" id="checkedDays">0</span>
-                                <span class="stat-label" data-zh="已打卡" data-en="Checked In">已打卡</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-number" id="completionRate">0%</span>
-                                <span class="stat-label" data-zh="完成率" data-en="Completion Rate">完成率</span>
-                            </div>
-                        </div>
-                        <div class="progress-bar">
-                            <div id="progressFill" class="progress-fill"></div>
-                        </div>
+                <!-- 番茄计时器页面 -->
+                <div class="page" id="pomodoroPage" data-page="timer" style="display: none;">
+                    <section class="pomodoro-section">
+                        <h2><i class="fas fa-clock"></i> <span data-zh="番茄计时器" data-en="Pomodoro Timer">番茄计时器</span></h2>
                         
-                        <!-- 进度路径可视化 -->
-                        <div class="progress-path-section">
-                            <h3 data-zh="学习之路" data-en="Learning Journey">学习之路</h3>
-                            <div class="progress-path-container">
-                                <svg class="progress-path-svg" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet">
-                                    <!-- 这里包含完整的SVG进度路径可视化内容 -->
-                                    <rect width="100%" height="100%" fill="url(#backgroundGradient)"/>
-                                    <!-- 其他SVG内容将保持原样 -->
+                        <!-- 计时器主体 -->
+                        <div class="pomodoro-timer">
+                            <div class="timer-circle">
+                                <svg class="progress-ring" width="300" height="300">
+                                    <circle class="progress-ring-circle" cx="150" cy="150" r="140"></circle>
                                 </svg>
-                            </div>
-                        </div>
-                    </section>
-                </div>
-
-                <!-- 学习日历页面 -->
-                <div class="page" id="calendarPage" data-page="calendar" style="display: none;">
-                    <section class="calendar-section">
-                        <h2><i class="fas fa-calendar"></i> <span data-zh="学习日历" data-en="Learning Calendar">学习日历</span></h2>
-                        <div id="calendar" class="calendar"></div>
-                        <div class="export-options">
-                            <h3><i class="fas fa-download"></i> <span data-zh="导出选项" data-en="Export Options">导出选项</span></h3>
-                            <div class="export-buttons">
-                                <button id="exportIcsBtn" class="btn btn-export" data-zh="导出ICS (Outlook/Google)" data-en="Export ICS (Outlook/Google)">导出ICS (Outlook/Google)</button>
-                                <button id="exportPdfBtn" class="btn btn-export" data-zh="导出PDF" data-en="Export PDF">导出PDF</button>
-                                <button id="exportJsonBtn" class="btn btn-export" data-zh="导出JSON" data-en="Export JSON">导出JSON</button>
-                            </div>
-                        </div>
-                    </section>
-                </div>
-
-                <!-- 计时器页面 -->
-                <div class="page" id="timerPage" data-page="timer" style="display: none;">
-                    <section class="timer-section">
-                        <h2><i class="fas fa-clock"></i> <span data-zh="专注计时器" data-en="Focus Timer">专注计时器</span></h2>
-                        <div class="timer-content">
-                            <div class="timer-display">
-                                <div class="timer-circle">
-                                    <span id="timerMinutes">25</span>:
-                                    <span id="timerSeconds">00</span>
+                                <div class="timer-content">
+                                    <div class="timer-display" id="timerDisplay">25:00</div>
+                                    <div class="timer-mode" id="timerMode" data-zh="专注时间" data-en="Focus Time">专注时间</div>
                                 </div>
                             </div>
-                            <div class="timer-controls">
-                                <button id="startTimerBtn" class="btn btn-primary" data-zh="开始" data-en="Start">开始</button>
-                                <button id="pauseTimerBtn" class="btn btn-secondary" data-zh="暂停" data-en="Pause">暂停</button>
-                                <button id="resetTimerBtn" class="btn btn-secondary" data-zh="重置" data-en="Reset">重置</button>
+                        </div>
+                        
+                        <!-- 控制按钮 -->
+                        <div class="timer-controls">
+                            <button id="startBtn" class="btn btn-primary timer-btn" data-zh="开始" data-en="Start">开始</button>
+                            <button id="pauseBtn" class="btn btn-secondary timer-btn" data-zh="暂停" data-en="Pause" style="display: none;">暂停</button>
+                            <button id="resetBtn" class="btn btn-outline timer-btn" data-zh="重置" data-en="Reset">重置</button>
+                            <button id="settingsBtn" class="btn btn-outline timer-btn" data-zh="设置" data-en="Settings">⚙️</button>
+                        </div>
+                        
+                        <!-- 设置面板 -->
+                        <div class="pomodoro-settings">
+                            <h3><i class="fas fa-cog"></i> <span data-zh="设置" data-en="Settings">设置</span></h3>
+                            <div class="settings-grid">
+                                <div class="setting-item">
+                                    <label data-zh="专注时间" data-en="Focus Time">专注时间</label>
+                                    <input type="number" id="focusTime" value="25" min="1" max="60"> <span data-zh="分钟" data-en="minutes">分钟</span>
+                                </div>
+                                <div class="setting-item">
+                                    <label data-zh="短休息" data-en="Short Break">短休息</label>
+                                    <input type="number" id="shortBreak" value="5" min="1" max="30"> <span data-zh="分钟" data-en="minutes">分钟</span>
+                                </div>
+                                <div class="setting-item">
+                                    <label data-zh="长休息" data-en="Long Break">长休息</label>
+                                    <input type="number" id="longBreak" value="15" min="1" max="60"> <span data-zh="分钟" data-en="minutes">分钟</span>
+                                </div>
+                                <div class="setting-item">
+                                    <label data-zh="长休息间隔" data-en="Long Break Interval">长休息间隔</label>
+                                    <input type="number" id="longBreakInterval" value="4" min="2" max="10"> <span data-zh="个番茄" data-en="pomodoros">个番茄</span>
+                                </div>
                             </div>
-                            <div class="timer-presets">
-                                <button class="preset-btn" data-minutes="25" data-zh="番茄钟 (25分钟)" data-en="Pomodoro (25min)">番茄钟 (25分钟)</button>
-                                <button class="preset-btn" data-minutes="5" data-zh="短休息 (5分钟)" data-en="Short Break (5min)">短休息 (5分钟)</button>
-                                <button class="preset-btn" data-minutes="15" data-zh="长休息 (15分钟)" data-en="Long Break (15min)">长休息 (15分钟)</button>
-                                <button class="preset-btn" data-minutes="45" data-zh="学习模式 (45分钟)" data-en="Study Mode (45min)">学习模式 (45分钟)</button>
+                            <div class="settings-actions">
+                                <button id="saveSettings" class="btn btn-primary" data-zh="保存设置" data-en="Save Settings">保存设置</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 今日统计 -->
+                        <div class="pomodoro-stats">
+                            <h3><i class="fas fa-chart-bar"></i> <span data-zh="今日统计" data-en="Today's Stats">今日统计</span></h3>
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-value" id="completedPomodoros">0</div>
+                                    <div class="stat-label" data-zh="完成番茄" data-en="Completed">完成番茄</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value" id="totalFocusTime">0h 0m</div>
+                                    <div class="stat-label" data-zh="专注时间" data-en="Focus Time">专注时间</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value" id="currentStreak">0</div>
+                                    <div class="stat-label" data-zh="连续天数" data-en="Streak">连续天数</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 历史记录 -->
+                        <div class="pomodoro-history">
+                            <h3><i class="fas fa-history"></i> <span data-zh="历史记录" data-en="History">历史记录</span></h3>
+                            <div class="history-list" id="pomodoroHistory">
+                                <!-- 动态生成历史记录 -->
                             </div>
                         </div>
                     </section>
@@ -400,63 +322,9 @@
         </div>
     </div>
 
-    <!-- 推荐好友弹窗 -->
-    <div id="referralModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close" onclick="closeReferralModal()">&times;</span>
-            <h3 data-zh="推荐好友" data-en="Refer Friends">推荐好友</h3>
-            <div id="referralContent"></div>
-        </div>
-    </div>
 
-    <!-- 推荐欢迎弹窗 -->
-    <div id="welcomeModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close" onclick="closeWelcome()">&times;</span>
-            <h3 data-zh="欢迎" data-en="Welcome">欢迎</h3>
-            <div id="welcomeContent"></div>
-        </div>
-    </div>
 
-    <!-- 背景商店弹窗 -->
-    <div id="backgroundShopModal" class="shop-modal">
-        <div class="shop-modal-content">
-            <button class="shop-close" onclick="closeBackgroundShop()">&times;</button>
-            <h3 data-zh="背景商店" data-en="Background Shop">背景商店</h3>
-            <div class="shop-header">
-                <div class="user-points">
-                    <span data-zh="当前积分：" data-en="Current Points: ">当前积分：</span>
-                    <span id="shopPointsDisplay">0</span>
-                    <span class="points-icon">⭐</span>
-                </div>
-            </div>
-            <div class="shop-content">
-                <div class="shop-tabs">
-                    <button class="shop-tab active" data-tab="preset" data-zh="预设背景" data-en="Preset Backgrounds">预设背景</button>
-                    <button class="shop-tab" data-tab="custom" data-zh="自定义背景" data-en="Custom Background">自定义背景</button>
-                </div>
-                <div class="shop-tab-content">
-                    <div id="presetBackgrounds" class="tab-panel active">
-                        <div class="background-grid" id="backgroundGrid">
-                            <!-- 背景选项将通过JavaScript动态生成 -->
-                        </div>
-                    </div>
-                    <div id="customBackground" class="tab-panel">
-                        <div class="custom-upload-area">
-                            <div class="upload-zone" id="uploadZone">
-                                <div class="upload-icon">📁</div>
-                                <p data-zh="点击或拖拽上传自定义背景" data-en="Click or drag to upload custom background">点击或拖拽上传自定义背景</p>
-                                <input type="file" id="backgroundUpload" accept="image/*" style="display: none;">
-                            </div>
-                            <div class="upload-tips">
-                                <p data-zh="支持 JPG、PNG 格式，建议尺寸 1920x1080" data-en="Supports JPG, PNG formats, recommended size 1920x1080">支持 JPG、PNG 格式，建议尺寸 1920x1080</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- 底部访问量统计气泡 -->
     <div class="visitor-bubble" id="visitorBubble">
