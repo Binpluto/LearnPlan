@@ -29,28 +29,28 @@ let currentGoalId = localStorage.getItem('currentGoalId') || null;
 
 // 预设类别
 const PRESET_CATEGORIES = {
-    STUDY: { name: '学习', color: '#4CAF50', icon: '📚' },
-    WORK: { name: '工作', color: '#2196F3', icon: '💼' },
-    HEALTH: { name: '健康', color: '#FF9800', icon: '🏃' },
-    HOBBY: { name: '兴趣', color: '#9C27B0', icon: '🎨' },
-    SKILL: { name: '技能', color: '#F44336', icon: '🛠️' },
-    LANGUAGE: { name: '语言', color: '#00BCD4', icon: '🗣️' },
-    FITNESS: { name: '健身', color: '#8BC34A', icon: '💪' },
-    READING: { name: '阅读', color: '#795548', icon: '📖' }
+    STUDY: { name: '学习', color: '#8fbc8f', icon: '📚' },
+    WORK: { name: '工作', color: '#9acd32', icon: '💼' },
+    HEALTH: { name: '健康', color: '#b8d8ba', icon: '🏃' },
+    HOBBY: { name: '兴趣', color: '#6b8e23', icon: '🎨' },
+    SKILL: { name: '技能', color: '#4a5d23', icon: '🛠️' },
+    LANGUAGE: { name: '语言', color: '#c8e6c9', icon: '🗣️' },
+    FITNESS: { name: '健身', color: '#8fbc8f', icon: '💪' },
+    READING: { name: '阅读', color: '#6b8e23', icon: '📖' }
 };
 
 // 优先级配置
 const PRIORITY_LEVELS = {
-    HIGH: { name: '高优先级', value: 3, color: '#F44336', icon: '🔥' },
-    MEDIUM: { name: '中优先级', value: 2, color: '#FF9800', icon: '⚡' },
-    LOW: { name: '低优先级', value: 1, color: '#4CAF50', icon: '📌' }
+    HIGH: { name: '高优先级', value: 3, color: '#4a5d23', icon: '🔥' },
+    MEDIUM: { name: '中优先级', value: 2, color: '#6b8e23', icon: '⚡' },
+    LOW: { name: '低优先级', value: 1, color: '#8fbc8f', icon: '📌' }
 };
 
 // 颜色管理
 const GOAL_COLORS = [
-    '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336',
-    '#00BCD4', '#8BC34A', '#795548', '#607D8B', '#E91E63',
-    '#3F51B5', '#009688', '#CDDC39', '#FF5722', '#9E9E9E'
+    '#8fbc8f', '#9acd32', '#b8d8ba', '#6b8e23', '#4a5d23',
+    '#c8e6c9', '#8fbc8f', '#6b8e23', '#4a5d23', '#9acd32',
+    '#b8d8ba', '#c8e6c9', '#8fbc8f', '#6b8e23', '#4a5d23'
 ];
 
 // DOM 元素
