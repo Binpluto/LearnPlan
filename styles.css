@@ -2347,10 +2347,183 @@ input[type="text"]:focus, input[type="date"]:focus {
     background: white;
     border-radius: 15px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    max-width: 400px;
+    max-width: 600px;
     width: 90%;
     max-height: 80vh;
     overflow: hidden;
+}
+
+/* 所有目标模态框样式 */
+.all-goals-container {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+
+.modal-priority-group {
+    margin-bottom: 20px;
+}
+
+.modal-priority-header {
+    margin: 0 0 10px 0;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, rgba(139, 188, 143, 0.1) 0%, rgba(139, 188, 143, 0.05) 100%);
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+    border-left: 4px solid currentColor;
+}
+
+.modal-goals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-goal-item {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 249, 250, 0.9) 100%);
+    border-radius: 12px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(139, 188, 143, 0.2);
+}
+
+.modal-goal-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(139, 188, 143, 0.15);
+    border-color: rgba(139, 188, 143, 0.3);
+}
+
+.modal-goal-item.active {
+    background: linear-gradient(135deg, rgba(139, 188, 143, 0.15) 0%, rgba(139, 188, 143, 0.08) 100%);
+    border-color: rgba(139, 188, 143, 0.4);
+    box-shadow: 0 4px 15px rgba(139, 188, 143, 0.2);
+}
+
+.modal-goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.modal-goal-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.modal-goal-info .goal-title {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1.1em;
+}
+
+.current-badge {
+    background: linear-gradient(135deg, #8fbc8f, #6b8e23);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.modal-goal-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.modal-action-btn {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 249, 250, 0.8) 100%);
+    border: 1px solid rgba(139, 188, 143, 0.3);
+    border-radius: 8px;
+    padding: 6px 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9em;
+}
+
+.modal-action-btn:hover {
+    background: linear-gradient(135deg, rgba(139, 188, 143, 0.2) 0%, rgba(139, 188, 143, 0.1) 100%);
+    border-color: rgba(139, 188, 143, 0.5);
+    transform: scale(1.05);
+}
+
+.modal-goal-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modal-goal-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.modal-goal-meta .goal-category {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.modal-goal-meta .goal-deadline {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.modal-goal-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-goal-progress .progress-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: rgba(139, 188, 143, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.modal-goal-progress .progress-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.modal-goal-progress .progress-text {
+    font-size: 0.85em;
+    color: #6c757d;
+    white-space: nowrap;
+}
+
+.modal-goal-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.modal-goal-tags .goal-tag {
+    background: linear-gradient(135deg, rgba(139, 188, 143, 0.2) 0%, rgba(139, 188, 143, 0.1) 100%);
+    color: #4a5d23;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+    border: 1px solid rgba(139, 188, 143, 0.3);
+}
+
+.no-goals-message {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 20px;
 }
 
 .modal-header {

@@ -889,6 +889,87 @@ function showModal(title, content) {
     setTimeout(() => modal.classList.add('show'), 10);
 }
 
+// 显示所有目标的模态框
+function showAllGoalsModal() {
+    if (learningGoals.length === 0) {
+        showModal('所有学习目标', '<p class="no-goals-message">暂无学习目标，请先创建一个目标！</p>');
+        return;
+    }
+    
+    const sortedGoals = getGoalsByPriority();
+    let content = '<div class="all-goals-container">';
+    
+    // 按优先级分组显示
+    const priorityGroups = {
+        HIGH: sortedGoals.filter(g => g.priority === 'HIGH'),
+        MEDIUM: sortedGoals.filter(g => g.priority === 'MEDIUM'),
+        LOW: sortedGoals.filter(g => g.priority === 'LOW')
+    };
+    
+    Object.entries(priorityGroups).forEach(([priority, goals]) => {
+        if (goals.length === 0) return;
+        
+        const priorityInfo = PRIORITY_LEVELS[priority];
+        content += `
+            <div class="modal-priority-group">
+                <h4 class="modal-priority-header" style="color: ${priorityInfo.color}">
+                    ${priorityInfo.icon} ${priorityInfo.name} (${goals.length}个)
+                </h4>
+                <div class="modal-goals-list">
+        `;
+        
+        goals.forEach(goal => {
+            const category = PRESET_CATEGORIES[goal.category] || { name: goal.category, color: goal.color, icon: '📋' };
+            const progress = calculateGoalProgress(goal);
+            const isActive = goal.id === currentGoalId;
+            
+            content += `
+                <div class="modal-goal-item ${isActive ? 'active' : ''}" style="border-left: 4px solid ${goal.color}">
+                    <div class="modal-goal-header">
+                        <div class="modal-goal-info">
+                            <span class="goal-icon" style="color: ${category.color}">${category.icon}</span>
+                            <span class="goal-title">${goal.title}</span>
+                            ${isActive ? '<span class="current-badge">当前</span>' : ''}
+                        </div>
+                        <div class="modal-goal-actions">
+                            ${!isActive ? `<button class="modal-action-btn" onclick="setCurrentGoal('${goal.id}'); document.querySelector('.day-modal').remove();" title="设为当前目标">📌</button>` : ''}
+                            <button class="modal-action-btn" onclick="editGoal('${goal.id}')" title="编辑目标">✏️</button>
+                        </div>
+                    </div>
+                    <div class="modal-goal-details">
+                        <div class="modal-goal-meta">
+                            <span class="goal-category" style="background: ${category.color}20; color: ${category.color}">
+                                ${category.name}
+                            </span>
+                            <span class="goal-deadline">截止: ${new Date(goal.deadline).toLocaleDateString()}</span>
+                        </div>
+                        <div class="modal-goal-progress">
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: ${progress.percentage}%; background: ${goal.color}"></div>
+                            </div>
+                            <span class="progress-text">${progress.percentage}% (${progress.remainingDays}天剩余)</span>
+                        </div>
+                        ${goal.customTags && goal.customTags.length > 0 ? `
+                            <div class="modal-goal-tags">
+                                ${goal.customTags.map(tag => `<span class="goal-tag">${tag}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        
+        content += `
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    
+    showModal(`所有学习目标 (${learningGoals.length}个)`, content);
+}
+
 // 里程碑功能
 function initializeMilestones() {
     addMilestoneBtn.addEventListener('click', addMilestone);
@@ -1873,6 +1954,14 @@ function setupGoalFormEvents() {
             newGoalForm.style.display = 'none';
             clearGoalForm();
         });
+    }
+    
+    // 为目标管理标题添加双击事件
+    const goalManagementTitle = document.querySelector('.section-header h2');
+    if (goalManagementTitle) {
+        goalManagementTitle.addEventListener('dblclick', showAllGoalsModal);
+        goalManagementTitle.style.cursor = 'pointer';
+        goalManagementTitle.title = '双击查看所有目标';
     }
 }
 
