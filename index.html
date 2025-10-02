@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Just Do it ! - 学习计划助手</title>
+    <title>Just Do it ! - 目标管理助手</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -97,7 +97,7 @@
             <div class="header-content">
                 <div class="logo-section">
                     <h1 class="logo" data-zh="Just Do it !" data-en="Just Do it !">Just Do it !</h1>
-                    <p class="tagline" data-zh="让学习变得更有计划" data-en="Make learning more planned">让学习变得更有计划</p>
+                    <p class="tagline" data-zh="让目标管理更高效" data-en="Make goal management more efficient">让目标管理更高效</p>
                 </div>
                 <div class="points-section">
                     <div class="points-display">
@@ -113,10 +113,10 @@
             <main class="main-content">
                 <!-- 目标管理页面 -->
                 <div class="page" id="goalsPage" data-page="goals">
-            <!-- 学习目标设置 -->
+            <!-- 目标设置 -->
             <section class="goal-section">
                 <div class="section-header">
-                    <h2><i class="fas fa-target"></i> <span data-zh="学习目标管理" data-en="Learning Goals Management">学习目标管理</span></h2>
+                    <h2><i class="fas fa-target"></i> <span data-zh="目标管理" data-en="Goal Management">目标管理</span></h2>
                     <button id="addGoalBtn" class="btn btn-secondary" data-zh="+ 新建目标" data-en="+ New Goal">+ 新建目标</button>
                 </div>
                 
@@ -182,6 +182,81 @@
                         <label data-zh="秒" data-en="Seconds">秒</label>
                     </div>
                 </div>
+                </section>
+
+                <!-- 导出功能区域 -->
+                <section class="export-section">
+                    <h2><i class="fas fa-download"></i> <span data-zh="导出目标" data-en="Export Goals">导出目标</span></h2>
+                    <div class="export-buttons">
+                        <button id="exportIcsBtn" class="btn btn-export" title="导出为日历文件">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span data-zh="ICS日历" data-en="ICS Calendar">ICS日历</span>
+                        </button>
+                        <button id="exportPdfBtn" class="btn btn-export" title="导出为PDF报告">
+                            <i class="fas fa-file-pdf"></i>
+                            <span data-zh="PDF报告" data-en="PDF Report">PDF报告</span>
+                        </button>
+                        <button id="exportExcelBtn" class="btn btn-export" title="导出为Excel表格">
+                            <i class="fas fa-file-excel"></i>
+                            <span data-zh="Excel表格" data-en="Excel Sheet">Excel表格</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 小组模式区域 -->
+                <section class="group-section">
+                    <h2><i class="fas fa-users"></i> <span data-zh="小组模式" data-en="Group Mode">小组模式</span></h2>
+                    <div class="group-controls">
+                        <button id="createGroupBtn" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            <span data-zh="创建小组" data-en="Create Group">创建小组</span>
+                        </button>
+                        <button id="joinGroupBtn" class="btn btn-secondary">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span data-zh="加入小组" data-en="Join Group">加入小组</span>
+                        </button>
+                        <button id="groupRankingBtn" class="btn btn-info">
+                            <i class="fas fa-trophy"></i>
+                            <span data-zh="小组排行" data-en="Group Ranking">小组排行</span>
+                        </button>
+                    </div>
+                    <div id="groupInfo" class="group-info" style="display: none;">
+                        <!-- 小组信息将在这里显示 -->
+                    </div>
+                </section>
+
+                <!-- 专注模式区域 -->
+                <section class="focus-section">
+                    <h2><i class="fas fa-brain"></i> <span data-zh="专注模式" data-en="Focus Mode">专注模式</span></h2>
+                    <div class="focus-controls">
+                        <button id="startFocusBtn" class="btn btn-focus">
+                            <i class="fas fa-play"></i>
+                            <span data-zh="开始专注" data-en="Start Focus">开始专注</span>
+                        </button>
+                        <div class="focus-timer" id="focusTimer" style="display: none;">
+                            <div class="timer-display">
+                                <span id="focusMinutes">25</span>:<span id="focusSeconds">00</span>
+                            </div>
+                            <div class="timer-controls">
+                                <button id="pauseFocusBtn" class="btn btn-warning">
+                                    <i class="fas fa-pause"></i>
+                                </button>
+                                <button id="stopFocusBtn" class="btn btn-danger">
+                                    <i class="fas fa-stop"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="focus-settings">
+                            <label for="focusDuration">专注时长（分钟）:</label>
+                            <select id="focusDuration">
+                                <option value="15">15分钟</option>
+                                <option value="25" selected>25分钟</option>
+                                <option value="30">30分钟</option>
+                                <option value="45">45分钟</option>
+                                <option value="60">60分钟</option>
+                            </select>
+                        </div>
+                    </div>
                 </section>
                 </div>
 

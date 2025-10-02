@@ -29,7 +29,7 @@ let currentGoalId = localStorage.getItem('currentGoalId') || null;
 
 // 预设类别
 const PRESET_CATEGORIES = {
-    STUDY: { name: '学习', color: '#8fbc8f', icon: '📚' },
+    STUDY: { name: '工作', color: '#8fbc8f', icon: '💼' },
     WORK: { name: '工作', color: '#9acd32', icon: '💼' },
     HEALTH: { name: '健康', color: '#b8d8ba', icon: '🏃' },
     HOBBY: { name: '兴趣', color: '#6b8e23', icon: '🎨' },
@@ -100,6 +100,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initializePointsSystem(); // 初始化积分系统
     initializeMultiGoalSystem(); // 初始化多目标系统
     updateTimeStats(); // 初始化时间统计
+    initializeNewExportFeatures(); // 初始化导出功能
+    initializeGroupMode(); // 初始化小组模式
+    initializeFocusMode(); // 初始化专注模式
     
     // 设置今天的日期为默认截止日期
     const today = new Date();
@@ -117,7 +120,7 @@ if (setGoalBtn) {
         const deadlineValue = deadlineInput.value;
     
     if (!goal || !deadlineValue) {
-        alert('请输入学习目标和截止日期！');
+        alert('请输入目标和截止日期！');
         return;
     }
     
@@ -614,7 +617,7 @@ function showModal(title, content) {
 // 显示所有目标的模态框
 function showAllGoalsModal() {
     if (learningGoals.length === 0) {
-        showModal('所有学习目标', '<p class="no-goals-message">暂无学习目标，请先创建一个目标！</p>');
+        showModal('所有目标', '<p class="no-goals-message">暂无目标，请先创建一个目标！</p>');
         return;
     }
     
@@ -689,7 +692,7 @@ function showAllGoalsModal() {
     
     content += '</div>';
     
-    showModal(`所有学习目标 (${learningGoals.length}个)`, content);
+    showModal(`所有目标 (${learningGoals.length}个)`, content);
 }
 
 // 里程碑功能
@@ -1052,6 +1055,19 @@ function showPointsNotification(points, reason) {
     }, 3000);
 }
 
+function updateTotalEarnedPoints(points) {
+    // 更新总获得积分统计
+    let totalEarnedPoints = parseInt(localStorage.getItem('totalEarnedPoints')) || 0;
+    totalEarnedPoints += points;
+    localStorage.setItem('totalEarnedPoints', totalEarnedPoints);
+    
+    // 更新显示
+    const totalEarnedElement = document.getElementById('totalEarnedPoints');
+    if (totalEarnedElement) {
+        totalEarnedElement.textContent = totalEarnedPoints;
+    }
+}
+
 // 生成用户唯一ID
 function getUserId() {
     let userId = localStorage.getItem('userId');
@@ -1358,7 +1374,7 @@ function renderGoalSelector() {
     if (learningGoals.length === 0) {
         goalSelector.innerHTML = `
             <div class="no-goals-message">
-                <p data-zh="还没有学习目标，点击上方按钮创建第一个目标吧！" data-en="No learning goals yet, click the button above to create your first goal!">还没有学习目标，点击上方按钮创建第一个目标吧！</p>
+                <p data-zh="还没有目标，点击上方按钮创建第一个目标吧！" data-en="No goals yet, click the button above to create your first goal!">还没有目标，点击上方按钮创建第一个目标吧！</p>
             </div>
         `;
         return;
@@ -1417,7 +1433,7 @@ function updateCurrentGoalDisplay() {
     
     if (!currentGoal) {
         currentGoalContent.innerHTML = `
-            <p data-zh="请选择或创建一个学习目标" data-en="Please select or create a learning goal">请选择或创建一个学习目标</p>
+            <p data-zh="请选择或创建一个目标" data-en="Please select or create a goal">请选择或创建一个目标</p>
         `;
         return;
     }
@@ -1628,7 +1644,7 @@ function updateProgressDisplay(progress, x, y) {
     // 可以在这里添加进度百分比显示
     const progressText = document.getElementById('progressText');
     if (progressText) {
-        progressText.textContent = `学习进度: ${progress.toFixed(1)}%`;
+        progressText.textContent = `目标进度: ${progress.toFixed(1)}%`;
     }
 }
 
@@ -1830,7 +1846,7 @@ function exportJSON() {
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = `学习计划_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.json`;
+    link.download = `目标管理_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1862,8 +1878,8 @@ function exportPDF() {
 
 
 function generatePDFContent() {
-    const title = currentLanguage === 'zh' ? '学习计划报告' : 'Learning Plan Report';
-    const goalLabel = currentLanguage === 'zh' ? '学习目标' : 'Learning Goal';
+    const title = currentLanguage === 'zh' ? '目标管理报告' : 'Goal Management Report';
+    const goalLabel = currentLanguage === 'zh' ? '目标' : 'Goal';
     const deadlineLabel = currentLanguage === 'zh' ? '截止日期' : 'Deadline';
     const tasksLabel = currentLanguage === 'zh' ? '任务清单' : 'Task List';
     const milestonesLabel = currentLanguage === 'zh' ? '里程碑' : 'Milestones';
@@ -2105,7 +2121,7 @@ function handleUserRegistration(username, email, password) {
         // 显示推荐成功消息
         showPointsNotification(POINT_RULES.REGISTRATION, '注册成功！通过推荐链接注册，你和推荐人都获得了积分奖励！');
     } else {
-        showPointsNotification(POINT_RULES.REGISTRATION, '注册成功！欢迎加入学习计划！');
+        showPointsNotification(POINT_RULES.REGISTRATION, '注册成功！欢迎加入目标管理！');
     }
     
     // 注册成功提示
@@ -2639,7 +2655,7 @@ function showTasksByGoalModal() {
     const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
     
     if (goals.length === 0) {
-        showModal('按目标分类的任务', '<div class="no-goals-message">暂无学习目标，请先创建目标</div>');
+        showModal('按目标分类的任务', '<div class="no-goals-message">暂无目标，请先创建目标</div>');
         return;
     }
     
@@ -3399,4 +3415,679 @@ function initializeFeedbackSystem() {
 // 在页面加载时初始化反馈系统
 document.addEventListener('DOMContentLoaded', function() {
     initializeFeedbackSystem();
+    initializeNewExportFeatures();
+    initializeGroupMode();
+    initializeFocusMode();
 });
+
+// 新导出功能初始化
+function initializeNewExportFeatures() {
+    const exportIcsBtn = document.getElementById('exportIcsBtn');
+    const exportPdfBtn = document.getElementById('exportPdfBtn');
+    const exportExcelBtn = document.getElementById('exportExcelBtn');
+
+    if (exportIcsBtn) {
+        exportIcsBtn.addEventListener('click', exportToICS);
+    }
+    if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', exportToPDF);
+    }
+    if (exportExcelBtn) {
+        exportExcelBtn.addEventListener('click', exportToExcel);
+    }
+}
+
+// ICS格式导出功能
+function exportToICS() {
+    try {
+        const goals = learningGoals || [];
+        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        const milestones = JSON.parse(localStorage.getItem('milestones')) || [];
+        
+        let icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//目标管理助手//目标管理 1.0//CN',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH'
+        ];
+
+        // 添加目标事件
+        goals.forEach(goal => {
+            if (goal.deadline) {
+                const startDate = formatDateForICS(new Date(goal.createdAt || Date.now()));
+                const endDate = formatDateForICS(new Date(goal.deadline));
+                const uid = `goal-${goal.id}@goalmanager.local`;
+                
+                icsContent.push(
+                    'BEGIN:VEVENT',
+                    `UID:${uid}`,
+                    `DTSTART:${startDate}`,
+                    `DTEND:${endDate}`,
+                    `SUMMARY:目标: ${goal.title}`,
+                    `DESCRIPTION:类别: ${goal.category}\n优先级: ${goal.priority}\n创建时间: ${new Date(goal.createdAt || Date.now()).toLocaleString()}`,
+                    `CATEGORIES:${goal.category}`,
+                    `PRIORITY:${goal.priority === 'HIGH' ? '1' : goal.priority === 'MEDIUM' ? '5' : '9'}`,
+                    'STATUS:CONFIRMED',
+                    'END:VEVENT'
+                );
+            }
+        });
+
+        // 添加里程碑事件
+        milestones.forEach(milestone => {
+            if (milestone.date) {
+                const eventDate = formatDateForICS(new Date(milestone.date));
+                const uid = `milestone-${milestone.id}@goalmanager.local`;
+                
+                icsContent.push(
+                    'BEGIN:VEVENT',
+                    `UID:${uid}`,
+                    `DTSTART:${eventDate}`,
+                    `DTEND:${eventDate}`,
+                    `SUMMARY:里程碑: ${milestone.title}`,
+                    `DESCRIPTION:${milestone.description || ''}`,
+                    'CATEGORIES:里程碑',
+                    'STATUS:CONFIRMED',
+                    'END:VEVENT'
+                );
+            }
+        });
+
+        icsContent.push('END:VCALENDAR');
+        
+        const icsBlob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(icsBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `目标管理_${new Date().toISOString().split('T')[0]}.ics`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        showMessage('ICS日历文件导出成功！', 'success');
+    } catch (error) {
+        console.error('ICS导出失败:', error);
+        showMessage('ICS导出失败，请重试', 'error');
+    }
+}
+
+// 格式化日期为ICS格式
+function formatDateForICS(date) {
+    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+}
+
+// PDF格式导出功能
+function exportToPDF() {
+    try {
+        const goals = learningGoals || [];
+        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        const milestones = JSON.parse(localStorage.getItem('milestones')) || [];
+        const userPoints = parseInt(localStorage.getItem('userPoints')) || 0;
+        
+        // 创建PDF内容
+        let pdfContent = `
+目标管理报告
+生成时间: ${new Date().toLocaleString()}
+
+=== 目标概览 ===
+总目标数: ${goals.length}
+已完成目标: ${goals.filter(g => g.completed).length}
+进行中目标: ${goals.filter(g => !g.completed).length}
+用户积分: ${userPoints}
+
+=== 详细目标列表 ===
+`;
+
+        goals.forEach((goal, index) => {
+            pdfContent += `
+${index + 1}. ${goal.title}
+`;
+            pdfContent += `   类别: ${goal.category}
+`;
+            pdfContent += `   优先级: ${goal.priority}
+`;
+            pdfContent += `   截止日期: ${goal.deadline ? new Date(goal.deadline).toLocaleDateString() : '未设置'}
+`;
+            pdfContent += `   状态: ${goal.completed ? '已完成' : '进行中'}
+`;
+            pdfContent += `   创建时间: ${new Date(goal.createdAt || Date.now()).toLocaleString()}
+`;
+        });
+
+        pdfContent += `
+=== 每日任务统计 ===
+总任务数: ${tasks.length}
+已完成任务: ${tasks.filter(t => t.completed).length}
+`;
+
+        pdfContent += `
+=== 里程碑列表 ===
+`;
+        milestones.forEach((milestone, index) => {
+            pdfContent += `${index + 1}. ${milestone.title}
+`;
+            pdfContent += `   日期: ${milestone.date ? new Date(milestone.date).toLocaleDateString() : '未设置'}
+`;
+            pdfContent += `   状态: ${milestone.completed ? '已完成' : '待完成'}
+`;
+        });
+
+        // 创建并下载PDF文件（使用简单的文本格式）
+        const pdfBlob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `目标管理报告_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        showMessage('PDF报告导出成功！', 'success');
+    } catch (error) {
+        console.error('PDF导出失败:', error);
+        showMessage('PDF导出失败，请重试', 'error');
+    }
+}
+
+// Excel格式导出功能
+function exportToExcel() {
+    try {
+        const goals = learningGoals || [];
+        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        const milestones = JSON.parse(localStorage.getItem('milestones')) || [];
+        
+        // 创建CSV格式数据（Excel兼容）
+        let csvContent = '\uFEFF'; // BOM for UTF-8
+        
+        // 目标数据
+        csvContent += '目标管理数据\n\n';
+        csvContent += '=== 目标列表 ===\n';
+        csvContent += '序号,标题,类别,优先级,截止日期,状态,创建时间\n';
+        
+        goals.forEach((goal, index) => {
+            csvContent += `${index + 1},"${goal.title}","${goal.category}","${goal.priority}","${goal.deadline ? new Date(goal.deadline).toLocaleDateString() : '未设置'}","${goal.completed ? '已完成' : '进行中'}","${new Date(goal.createdAt || Date.now()).toLocaleString()}"\n`;
+        });
+        
+        // 任务数据
+        csvContent += '\n=== 每日任务 ===\n';
+        csvContent += '序号,任务内容,状态,用时(分钟),创建时间\n';
+        
+        tasks.forEach((task, index) => {
+            csvContent += `${index + 1},"${task.text}","${task.completed ? '已完成' : '待完成'}","${Math.round((task.timeSpent || 0) / 60)}","${new Date(task.createdAt || Date.now()).toLocaleString()}"\n`;
+        });
+        
+        // 里程碑数据
+        csvContent += '\n=== 里程碑 ===\n';
+        csvContent += '序号,标题,日期,状态\n';
+        
+        milestones.forEach((milestone, index) => {
+            csvContent += `${index + 1},"${milestone.title}","${milestone.date ? new Date(milestone.date).toLocaleDateString() : '未设置'}","${milestone.completed ? '已完成' : '待完成'}"\n`;
+        });
+        
+        const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(csvBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `目标管理数据_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        showMessage('Excel表格导出成功！', 'success');
+    } catch (error) {
+        console.error('Excel导出失败:', error);
+        showMessage('Excel导出失败，请重试', 'error');
+    }
+}
+
+// 小组模式功能
+let currentGroup = JSON.parse(localStorage.getItem('currentGroup')) || null;
+let groupData = JSON.parse(localStorage.getItem('groupData')) || {};
+
+function initializeGroupMode() {
+    const createGroupBtn = document.getElementById('createGroupBtn');
+    const joinGroupBtn = document.getElementById('joinGroupBtn');
+    const groupRankingBtn = document.getElementById('groupRankingBtn');
+
+    if (createGroupBtn) {
+        createGroupBtn.addEventListener('click', showCreateGroupModal);
+    }
+    if (joinGroupBtn) {
+        joinGroupBtn.addEventListener('click', showJoinGroupModal);
+    }
+    if (groupRankingBtn) {
+        groupRankingBtn.addEventListener('click', showGroupRanking);
+    }
+
+    updateGroupDisplay();
+}
+
+function showCreateGroupModal() {
+    const modalContent = `
+        <div class="group-modal">
+            <h3>创建小组</h3>
+            <div class="form-group">
+                <label for="groupName">小组名称:</label>
+                <input type="text" id="groupName" placeholder="输入小组名称" maxlength="20">
+            </div>
+            <div class="form-group">
+                <label for="groupDescription">小组描述:</label>
+                <textarea id="groupDescription" placeholder="描述小组目标和规则" maxlength="100"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="groupPassword">加入密码（可选）:</label>
+                <input type="password" id="groupPassword" placeholder="设置加入密码">
+            </div>
+            <div class="modal-actions">
+                <button onclick="createGroup()" class="btn btn-primary">创建小组</button>
+                <button onclick="closeModal()" class="btn btn-secondary">取消</button>
+            </div>
+        </div>
+    `;
+    showModal('创建小组', modalContent);
+}
+
+function showJoinGroupModal() {
+    const modalContent = `
+        <div class="group-modal">
+            <h3>加入小组</h3>
+            <div class="form-group">
+                <label for="joinGroupId">小组ID:</label>
+                <input type="text" id="joinGroupId" placeholder="输入小组ID">
+            </div>
+            <div class="form-group">
+                <label for="joinGroupPassword">密码:</label>
+                <input type="password" id="joinGroupPassword" placeholder="输入小组密码（如需要）">
+            </div>
+            <div class="modal-actions">
+                <button onclick="joinGroup()" class="btn btn-primary">加入小组</button>
+                <button onclick="closeModal()" class="btn btn-secondary">取消</button>
+            </div>
+        </div>
+    `;
+    showModal('加入小组', modalContent);
+}
+
+function createGroup() {
+    const groupName = document.getElementById('groupName').value.trim();
+    const groupDescription = document.getElementById('groupDescription').value.trim();
+    const groupPassword = document.getElementById('groupPassword').value;
+
+    if (!groupName) {
+        showMessage('请输入小组名称', 'error');
+        return;
+    }
+
+    const groupId = generateGroupId();
+    const newGroup = {
+        id: groupId,
+        name: groupName,
+        description: groupDescription,
+        password: groupPassword,
+        createdAt: Date.now(),
+        createdBy: getUserId(),
+        members: [{
+            id: getUserId(),
+            name: localStorage.getItem('username') || '用户',
+            joinedAt: Date.now(),
+            points: userPoints,
+            goals: learningGoals.length,
+            completedGoals: learningGoals.filter(g => g.completed).length
+        }]
+    };
+
+    currentGroup = newGroup;
+    localStorage.setItem('currentGroup', JSON.stringify(currentGroup));
+    
+    groupData[groupId] = newGroup;
+    localStorage.setItem('groupData', JSON.stringify(groupData));
+
+    updateGroupDisplay();
+    closeModal();
+    showMessage(`小组"${groupName}"创建成功！小组ID: ${groupId}`, 'success');
+}
+
+function joinGroup() {
+    const groupId = document.getElementById('joinGroupId').value.trim();
+    const password = document.getElementById('joinGroupPassword').value;
+
+    if (!groupId) {
+        showMessage('请输入小组ID', 'error');
+        return;
+    }
+
+    const group = groupData[groupId];
+    if (!group) {
+        showMessage('小组不存在', 'error');
+        return;
+    }
+
+    if (group.password && group.password !== password) {
+        showMessage('密码错误', 'error');
+        return;
+    }
+
+    const userId = getUserId();
+    if (group.members.some(m => m.id === userId)) {
+        showMessage('您已经是该小组成员', 'info');
+        return;
+    }
+
+    const newMember = {
+        id: userId,
+        name: localStorage.getItem('username') || '用户',
+        joinedAt: Date.now(),
+        points: userPoints,
+        goals: learningGoals.length,
+        completedGoals: learningGoals.filter(g => g.completed).length
+    };
+
+    group.members.push(newMember);
+    currentGroup = group;
+    
+    localStorage.setItem('currentGroup', JSON.stringify(currentGroup));
+    groupData[groupId] = group;
+    localStorage.setItem('groupData', JSON.stringify(groupData));
+
+    updateGroupDisplay();
+    closeModal();
+    showMessage(`成功加入小组"${group.name}"！`, 'success');
+}
+
+function generateGroupId() {
+    return 'GROUP_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+function getUserId() {
+    let userId = localStorage.getItem('userId');
+    if (!userId) {
+        userId = 'USER_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        localStorage.setItem('userId', userId);
+    }
+    return userId;
+}
+
+function updateGroupDisplay() {
+    const groupInfo = document.getElementById('groupInfo');
+    if (!groupInfo) return;
+
+    if (currentGroup) {
+        groupInfo.style.display = 'block';
+        groupInfo.innerHTML = `
+            <div class="current-group-info">
+                <h4>当前小组: ${currentGroup.name}</h4>
+                <p>描述: ${currentGroup.description || '暂无描述'}</p>
+                <p>成员数: ${currentGroup.members.length}</p>
+                <p>小组ID: ${currentGroup.id}</p>
+                <div class="group-actions">
+                    <button onclick="leaveGroup()" class="btn btn-danger btn-sm">退出小组</button>
+                    <button onclick="showGroupRanking()" class="btn btn-info btn-sm">查看排行</button>
+                </div>
+            </div>
+        `;
+    } else {
+        groupInfo.style.display = 'none';
+    }
+}
+
+function leaveGroup() {
+    if (!currentGroup) return;
+
+    if (confirm('确定要退出当前小组吗？')) {
+        const userId = getUserId();
+        currentGroup.members = currentGroup.members.filter(m => m.id !== userId);
+        
+        groupData[currentGroup.id] = currentGroup;
+        localStorage.setItem('groupData', JSON.stringify(groupData));
+        
+        currentGroup = null;
+        localStorage.removeItem('currentGroup');
+        
+        updateGroupDisplay();
+        showMessage('已退出小组', 'info');
+    }
+}
+
+function showGroupRanking() {
+    if (!currentGroup) {
+        showMessage('请先加入小组', 'info');
+        return;
+    }
+
+    const sortedMembers = [...currentGroup.members].sort((a, b) => b.points - a.points);
+    
+    let rankingContent = `
+        <div class="group-ranking">
+            <h3>${currentGroup.name} - 小组排行榜</h3>
+            <div class="ranking-list">
+    `;
+
+    sortedMembers.forEach((member, index) => {
+        const rank = index + 1;
+        const isCurrentUser = member.id === getUserId();
+        rankingContent += `
+            <div class="ranking-item ${isCurrentUser ? 'current-user' : ''}">
+                <div class="rank">${rank}</div>
+                <div class="member-info">
+                    <div class="member-name">${member.name} ${isCurrentUser ? '(我)' : ''}</div>
+                    <div class="member-stats">
+                        积分: ${member.points} | 目标: ${member.completedGoals}/${member.goals}
+                    </div>
+                </div>
+                <div class="rank-badge">
+                    ${rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '🏅'}
+                </div>
+            </div>
+        `;
+    });
+
+    rankingContent += `
+            </div>
+            <div class="modal-actions">
+                <button onclick="closeModal()" class="btn btn-primary">关闭</button>
+            </div>
+        </div>
+    `;
+
+    showModal('小组排行榜', rankingContent);
+}
+
+// 专注模式功能
+let focusTimer = null;
+let focusStartTime = null;
+let focusDuration = 25 * 60;
+let isPaused = false;
+let remainingTime = focusDuration;
+
+function initializeFocusMode() {
+    const startFocusBtn = document.getElementById('startFocusBtn');
+    const pauseFocusBtn = document.getElementById('pauseFocusBtn');
+    const stopFocusBtn = document.getElementById('stopFocusBtn');
+    const focusDurationSelect = document.getElementById('focusDuration');
+
+    if (startFocusBtn) {
+        startFocusBtn.addEventListener('click', startFocusSession);
+    }
+    if (pauseFocusBtn) {
+        pauseFocusBtn.addEventListener('click', pauseFocusSession);
+    }
+    if (stopFocusBtn) {
+        stopFocusBtn.addEventListener('click', stopFocusSession);
+    }
+    if (focusDurationSelect) {
+        focusDurationSelect.addEventListener('change', updateFocusDuration);
+    }
+}
+
+function updateFocusDuration() {
+    const select = document.getElementById('focusDuration');
+    focusDuration = parseInt(select.value) * 60;
+    remainingTime = focusDuration;
+    updateFocusDisplay();
+}
+
+function startFocusSession() {
+    const timerDisplay = document.getElementById('focusTimer');
+    const startBtn = document.getElementById('startFocusBtn');
+    
+    if (timerDisplay && startBtn) {
+        timerDisplay.style.display = 'block';
+        startBtn.style.display = 'none';
+        
+        focusStartTime = Date.now();
+        isPaused = false;
+        
+        document.body.classList.add('focus-mode-active');
+        showFocusNotification('专注模式已开启，保持专注！');
+        
+        startFocusTimer();
+    }
+}
+
+function startFocusTimer() {
+    focusTimer = setInterval(() => {
+        if (!isPaused) {
+            remainingTime--;
+            updateFocusDisplay();
+            
+            if (remainingTime <= 0) {
+                completeFocusSession();
+            }
+        }
+    }, 1000);
+}
+
+function pauseFocusSession() {
+    isPaused = !isPaused;
+    const pauseBtn = document.getElementById('pauseFocusBtn');
+    
+    if (pauseBtn) {
+        pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
+    }
+    
+    showFocusNotification(isPaused ? '专注已暂停' : '继续专注');
+}
+
+function stopFocusSession() {
+    if (confirm('确定要结束专注模式吗？')) {
+        clearInterval(focusTimer);
+        resetFocusMode();
+        showFocusNotification('专注模式已结束');
+    }
+}
+
+function completeFocusSession() {
+    clearInterval(focusTimer);
+    
+    const focusPoints = Math.floor(focusDuration / 60) * 2;
+    awardPoints(focusPoints, '完成专注模式');
+    
+    updateGroupMemberStats();
+    
+    resetFocusMode();
+    showFocusNotification(`专注完成！获得 ${focusPoints} 积分`);
+    
+    playNotificationSound();
+}
+
+function resetFocusMode() {
+    const timerDisplay = document.getElementById('focusTimer');
+    const startBtn = document.getElementById('startFocusBtn');
+    const pauseBtn = document.getElementById('pauseFocusBtn');
+    
+    if (timerDisplay) timerDisplay.style.display = 'none';
+    if (startBtn) startBtn.style.display = 'block';
+    if (pauseBtn) pauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+    
+    remainingTime = focusDuration;
+    isPaused = false;
+    
+    document.body.classList.remove('focus-mode-active');
+    
+    updateFocusDisplay();
+}
+
+function updateFocusDisplay() {
+    const minutes = Math.floor(remainingTime / 60);
+    const seconds = remainingTime % 60;
+    
+    const minutesElement = document.getElementById('focusMinutes');
+    const secondsElement = document.getElementById('focusSeconds');
+    
+    if (minutesElement) minutesElement.textContent = minutes.toString().padStart(2, '0');
+    if (secondsElement) secondsElement.textContent = seconds.toString().padStart(2, '0');
+}
+
+function showFocusNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'focus-notification';
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        z-index: 10000;
+        font-weight: 600;
+        animation: slideInRight 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+function updateGroupMemberStats() {
+    if (currentGroup) {
+        const userId = getUserId();
+        const memberIndex = currentGroup.members.findIndex(m => m.id === userId);
+        
+        if (memberIndex !== -1) {
+            currentGroup.members[memberIndex].points = userPoints;
+            currentGroup.members[memberIndex].goals = learningGoals.length;
+            currentGroup.members[memberIndex].completedGoals = learningGoals.filter(g => g.completed).length;
+            
+            localStorage.setItem('currentGroup', JSON.stringify(currentGroup));
+            groupData[currentGroup.id] = currentGroup;
+            localStorage.setItem('groupData', JSON.stringify(groupData));
+        }
+    }
+}
+
+function playNotificationSound() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (error) {
+        console.log('音效播放失败:', error);
+    }
+}
