@@ -75,6 +75,12 @@
                         <span class="menu-text" data-zh="每日清单" data-en="Daily Tasks">每日清单</span>
                     </a>
                 </li>
+                <li class="menu-item">
+                    <a href="#" class="menu-link" data-page="feedback">
+                        <i class="fas fa-comments"></i>
+                        <span class="menu-text" data-zh="用户反馈" data-en="User Feedback">用户反馈</span>
+                    </a>
+                </li>
 
             </ul>
         </nav>
@@ -231,6 +237,75 @@
                     <div id="milestoneList" class="milestone-list"></div>
                 </div>
             </section>
+                </div>
+
+                <!-- 用户反馈页面 -->
+                <div class="page" id="feedbackPage" data-page="feedback" style="display: none;">
+                    <section class="feedback-section">
+                        <h2><i class="fas fa-comments"></i> <span data-zh="用户反馈" data-en="User Feedback">用户反馈</span></h2>
+                        
+                        <!-- 反馈提交表单 -->
+                        <div class="feedback-form-container">
+                            <h3><i class="fas fa-edit"></i> <span data-zh="提交反馈" data-en="Submit Feedback">提交反馈</span></h3>
+                            <form id="feedbackForm" class="feedback-form">
+                                <div class="form-group">
+                                    <label for="feedbackType" data-zh="反馈类型" data-en="Feedback Type">反馈类型</label>
+                                    <select id="feedbackType" class="feedback-select" required>
+                                        <option value="" data-zh="请选择反馈类型" data-en="Select feedback type">请选择反馈类型</option>
+                                        <option value="bug" data-zh="错误报告" data-en="Bug Report">🐛 错误报告</option>
+                                        <option value="feature" data-zh="功能建议" data-en="Feature Request">💡 功能建议</option>
+                                        <option value="improvement" data-zh="改进建议" data-en="Improvement">⚡ 改进建议</option>
+                                        <option value="experience" data-zh="用户体验" data-en="User Experience">😊 用户体验</option>
+                                        <option value="other" data-zh="其他" data-en="Other">📝 其他</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="feedbackTitle" data-zh="标题" data-en="Title">标题</label>
+                                    <input type="text" id="feedbackTitle" class="feedback-input" placeholder="请输入反馈标题..." data-placeholder-zh="请输入反馈标题..." data-placeholder-en="Enter feedback title..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="feedbackContent" data-zh="详细描述" data-en="Description">详细描述</label>
+                                    <textarea id="feedbackContent" class="feedback-textarea" rows="5" placeholder="请详细描述您的反馈内容..." data-placeholder-zh="请详细描述您的反馈内容..." data-placeholder-en="Please describe your feedback in detail..." required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="feedbackContact" data-zh="联系方式（可选）" data-en="Contact (Optional)">联系方式（可选）</label>
+                                    <input type="text" id="feedbackContact" class="feedback-input" placeholder="邮箱或其他联系方式" data-placeholder-zh="邮箱或其他联系方式" data-placeholder-en="Email or other contact info">
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary" data-zh="提交反馈" data-en="Submit Feedback">提交反馈</button>
+                                    <button type="reset" class="btn btn-secondary" data-zh="重置" data-en="Reset">重置</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- 反馈展示区域 -->
+                        <div class="feedback-display-container">
+                            <div class="feedback-header">
+                                <h3><i class="fas fa-list"></i> <span data-zh="用户反馈列表" data-en="Feedback List">用户反馈列表</span></h3>
+                                <div class="feedback-filters">
+                                    <select id="feedbackFilter" class="filter-select">
+                                        <option value="all" data-zh="全部" data-en="All">全部</option>
+                                        <option value="bug" data-zh="错误报告" data-en="Bug Report">🐛 错误报告</option>
+                                        <option value="feature" data-zh="功能建议" data-en="Feature Request">💡 功能建议</option>
+                                        <option value="improvement" data-zh="改进建议" data-en="Improvement">⚡ 改进建议</option>
+                                        <option value="experience" data-zh="用户体验" data-en="User Experience">😊 用户体验</option>
+                                        <option value="other" data-zh="其他" data-en="Other">📝 其他</option>
+                                    </select>
+                                    <select id="feedbackSort" class="sort-select">
+                                        <option value="newest" data-zh="最新" data-en="Newest">最新</option>
+                                        <option value="oldest" data-zh="最早" data-en="Oldest">最早</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="feedbackList" class="feedback-list">
+                                <div class="no-feedback-message">
+                                    <i class="fas fa-inbox"></i>
+                                    <p data-zh="暂无反馈内容" data-en="No feedback yet">暂无反馈内容</p>
+                                    <p class="sub-text" data-zh="成为第一个提交反馈的用户吧！" data-en="Be the first to submit feedback!">成为第一个提交反馈的用户吧！</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
 
 

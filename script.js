@@ -2344,8 +2344,7 @@ class PageRouter {
             'goals': 'goalsPage',
             'tasks': 'tasksPage', 
             'progress': 'progressPage',
-
-    
+            'feedback': 'feedbackPage',
             'referral': 'referralPage',
             'shop': 'shopPage'
         };
@@ -2502,8 +2501,13 @@ class PageRouter {
                     setupProgressPageEvents(); // 设置进度分析页面事件
                 }, 100);
                 break;
-
-
+            case 'feedback':
+                // 初始化用户反馈页面
+                setTimeout(() => {
+                    setupFeedbackPageEvents(); // 设置反馈页面事件
+                    renderFeedbackList(); // 渲染反馈列表
+                }, 100);
+                break;
             case 'goals':
                 // 初始化目标管理页面
                 setTimeout(() => {
@@ -3136,4 +3140,263 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         initializeForestSystem();
     }, 1000);
+});
+
+// 用户反馈系统
+let feedbackData = JSON.parse(localStorage.getItem('feedbackData')) || [];
+
+// 反馈类型配置
+const FEEDBACK_TYPES = {
+    bug: { name: '错误报告', icon: '🐛', color: '#dc3545' },
+    feature: { name: '功能建议', icon: '💡', color: '#28a745' },
+    improvement: { name: '改进建议', icon: '⚡', color: '#ffc107' },
+    experience: { name: '用户体验', icon: '😊', color: '#17a2b8' },
+    other: { name: '其他', icon: '💬', color: '#6c757d' }
+};
+
+// 设置反馈页面事件
+function setupFeedbackPageEvents() {
+    const feedbackForm = document.getElementById('feedbackForm');
+    const submitBtn = document.getElementById('submitFeedbackBtn');
+    const resetBtn = document.getElementById('resetFeedbackBtn');
+    const filterSelect = document.getElementById('feedbackFilter');
+    const sortSelect = document.getElementById('feedbackSort');
+    
+    if (feedbackForm && !feedbackForm.hasAttribute('data-events-setup')) {
+        feedbackForm.addEventListener('submit', handleFeedbackSubmit);
+        feedbackForm.setAttribute('data-events-setup', 'true');
+    }
+    
+    if (submitBtn && !submitBtn.hasAttribute('data-events-setup')) {
+        submitBtn.addEventListener('click', handleFeedbackSubmit);
+        submitBtn.setAttribute('data-events-setup', 'true');
+    }
+    
+    if (resetBtn && !resetBtn.hasAttribute('data-events-setup')) {
+        resetBtn.addEventListener('click', resetFeedbackForm);
+        resetBtn.setAttribute('data-events-setup', 'true');
+    }
+    
+    if (filterSelect && !filterSelect.hasAttribute('data-events-setup')) {
+        filterSelect.addEventListener('change', renderFeedbackList);
+        filterSelect.setAttribute('data-events-setup', 'true');
+    }
+    
+    if (sortSelect && !sortSelect.hasAttribute('data-events-setup')) {
+        sortSelect.addEventListener('change', renderFeedbackList);
+        sortSelect.setAttribute('data-events-setup', 'true');
+    }
+}
+
+// 处理反馈提交
+function handleFeedbackSubmit(e) {
+    e.preventDefault();
+    
+    const typeSelect = document.getElementById('feedbackType');
+    const titleInput = document.getElementById('feedbackTitle');
+    const contentTextarea = document.getElementById('feedbackContent');
+    const contactInput = document.getElementById('feedbackContact');
+    
+    if (!typeSelect || !titleInput || !contentTextarea) {
+        showMessage('表单元素未找到', 'error');
+        return;
+    }
+    
+    const type = typeSelect.value;
+    const title = titleInput.value.trim();
+    const content = contentTextarea.value.trim();
+    const contact = contactInput ? contactInput.value.trim() : '';
+    
+    // 验证必填字段
+    if (!type || !title || !content) {
+        showMessage('请填写所有必填字段', 'error');
+        return;
+    }
+    
+    if (title.length < 5) {
+        showMessage('标题至少需要5个字符', 'error');
+        return;
+    }
+    
+    if (content.length < 10) {
+        showMessage('详细描述至少需要10个字符', 'error');
+        return;
+    }
+    
+    // 创建反馈对象
+    const feedback = {
+        id: 'feedback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        type: type,
+        title: title,
+        content: content,
+        contact: contact,
+        date: new Date().toISOString(),
+        timestamp: Date.now()
+    };
+    
+    // 保存反馈
+    feedbackData.unshift(feedback); // 新反馈放在最前面
+    saveFeedbackData();
+    
+    // 重置表单
+    resetFeedbackForm();
+    
+    // 重新渲染反馈列表
+    renderFeedbackList();
+    
+    // 显示成功消息
+    showMessage('反馈提交成功！感谢您的宝贵意见！', 'success');
+    
+    // 给予积分奖励
+    awardPoints(5, '提交用户反馈');
+}
+
+// 重置反馈表单
+function resetFeedbackForm() {
+    const typeSelect = document.getElementById('feedbackType');
+    const titleInput = document.getElementById('feedbackTitle');
+    const contentTextarea = document.getElementById('feedbackContent');
+    const contactInput = document.getElementById('feedbackContact');
+    
+    if (typeSelect) typeSelect.value = '';
+    if (titleInput) titleInput.value = '';
+    if (contentTextarea) contentTextarea.value = '';
+    if (contactInput) contactInput.value = '';
+}
+
+// 渲染反馈列表
+function renderFeedbackList() {
+    const feedbackList = document.getElementById('feedbackList');
+    if (!feedbackList) return;
+    
+    const filterSelect = document.getElementById('feedbackFilter');
+    const sortSelect = document.getElementById('feedbackSort');
+    
+    const filterType = filterSelect ? filterSelect.value : 'all';
+    const sortOrder = sortSelect ? sortSelect.value : 'newest';
+    
+    // 过滤反馈
+    let filteredFeedback = feedbackData;
+    if (filterType && filterType !== 'all') {
+        filteredFeedback = feedbackData.filter(feedback => feedback.type === filterType);
+    }
+    
+    // 排序反馈
+    filteredFeedback.sort((a, b) => {
+        switch (sortOrder) {
+            case 'oldest':
+                return a.timestamp - b.timestamp;
+            case 'type':
+                return a.type.localeCompare(b.type);
+            case 'newest':
+            default:
+                return b.timestamp - a.timestamp;
+        }
+    });
+    
+    // 渲染反馈列表
+    if (filteredFeedback.length === 0) {
+        feedbackList.innerHTML = `
+            <div class="no-feedback-message">
+                <i class="fas fa-comments"></i>
+                <p>暂无反馈内容</p>
+                <p class="sub-text">成为第一个提交反馈的用户吧！</p>
+            </div>
+        `;
+        return;
+    }
+    
+    feedbackList.innerHTML = filteredFeedback.map(feedback => {
+        const typeConfig = FEEDBACK_TYPES[feedback.type] || FEEDBACK_TYPES.other;
+        const date = new Date(feedback.date);
+        const formattedDate = date.toLocaleDateString('zh-CN', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        return `
+            <div class="feedback-item">
+                <div class="feedback-item-header">
+                    <span class="feedback-type-badge ${feedback.type}">
+                        ${typeConfig.icon} ${typeConfig.name}
+                    </span>
+                    <div class="feedback-meta">
+                        <span class="feedback-date">${formattedDate}</span>
+                        ${feedback.contact ? `<span class="feedback-contact">${feedback.contact}</span>` : ''}
+                    </div>
+                </div>
+                <h4 class="feedback-title">${escapeHtml(feedback.title)}</h4>
+                <p class="feedback-content">${escapeHtml(feedback.content).replace(/\n/g, '<br>')}</p>
+            </div>
+        `;
+    }).join('');
+}
+
+// HTML转义函数
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 保存反馈数据
+function saveFeedbackData() {
+    localStorage.setItem('feedbackData', JSON.stringify(feedbackData));
+}
+
+// 加载反馈数据
+function loadFeedbackData() {
+    const saved = localStorage.getItem('feedbackData');
+    if (saved) {
+        try {
+            feedbackData = JSON.parse(saved);
+        } catch (e) {
+            console.error('加载反馈数据失败:', e);
+            feedbackData = [];
+        }
+    }
+}
+
+// 获取反馈统计信息
+function getFeedbackStats() {
+    const stats = {
+        total: feedbackData.length,
+        byType: {}
+    };
+    
+    Object.keys(FEEDBACK_TYPES).forEach(type => {
+        stats.byType[type] = feedbackData.filter(feedback => feedback.type === type).length;
+    });
+    
+    return stats;
+}
+
+// 导出反馈数据
+function exportFeedbackData() {
+    const dataStr = JSON.stringify(feedbackData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `feedback_data_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    URL.revokeObjectURL(url);
+    showMessage('反馈数据导出成功', 'success');
+}
+
+// 初始化反馈系统
+function initializeFeedbackSystem() {
+    loadFeedbackData();
+}
+
+// 在页面加载时初始化反馈系统
+document.addEventListener('DOMContentLoaded', function() {
+    initializeFeedbackSystem();
 });

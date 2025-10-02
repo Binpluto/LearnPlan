@@ -4071,3 +4071,309 @@ input[type="text"]:focus, input[type="date"]:focus {
     border-radius: 12px;
     border: 2px dashed #dee2e6;
 }
+
+/* 用户反馈页面样式 */
+.feedback-section {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.feedback-section h2 {
+    color: #2c3e50;
+    margin-bottom: 30px;
+    font-size: 1.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.feedback-section h2 i {
+    color: #667eea;
+}
+
+/* 反馈表单容器 */
+.feedback-form-container {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 250, 0.9) 100%);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 40px;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.feedback-form-container h3 {
+    color: #2c3e50;
+    margin-bottom: 25px;
+    font-size: 1.4rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.feedback-form-container h3 i {
+    color: #667eea;
+}
+
+/* 表单样式 */
+.feedback-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.95rem;
+}
+
+.feedback-select,
+.feedback-input,
+.feedback-textarea {
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.feedback-select:focus,
+.feedback-input:focus,
+.feedback-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.feedback-textarea {
+    resize: vertical;
+    min-height: 120px;
+    font-family: inherit;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* 反馈展示容器 */
+.feedback-display-container {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 250, 0.9) 100%);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.feedback-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.feedback-header h3 {
+    color: #2c3e50;
+    font-size: 1.4rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.feedback-header h3 i {
+    color: #667eea;
+}
+
+.feedback-filters {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.filter-select,
+.sort-select {
+    padding: 8px 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-select:focus,
+.sort-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* 反馈列表 */
+.feedback-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.feedback-item {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.feedback-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
+    border-color: rgba(102, 126, 234, 0.2);
+}
+
+.feedback-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.feedback-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: white;
+}
+
+.feedback-type-badge.bug {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+}
+
+.feedback-type-badge.feature {
+    background: linear-gradient(135deg, #28a745, #218838);
+}
+
+.feedback-type-badge.improvement {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #212529;
+}
+
+.feedback-type-badge.experience {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+}
+
+.feedback-type-badge.other {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+}
+
+.feedback-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.feedback-date {
+    font-weight: 500;
+}
+
+.feedback-contact {
+    font-style: italic;
+}
+
+.feedback-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.feedback-content {
+    color: #495057;
+    line-height: 1.6;
+    margin-bottom: 0;
+}
+
+/* 无反馈消息 */
+.no-feedback-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.no-feedback-message i {
+    font-size: 3rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.no-feedback-message p {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    color: #495057;
+}
+
+.no-feedback-message .sub-text {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .feedback-section {
+        padding: 15px;
+    }
+    
+    .feedback-form-container,
+    .feedback-display-container {
+        padding: 20px;
+    }
+    
+    .feedback-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .feedback-filters {
+        justify-content: space-between;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .feedback-item-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .feedback-meta {
+        align-items: flex-start;
+        margin-top: 10px;
+    }
+}
