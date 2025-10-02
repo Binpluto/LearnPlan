@@ -52,7 +52,7 @@
         <!-- 侧边栏导航 -->
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2 class="sidebar-title" data-zh="学习助手" data-en="Study Helper">学习助手</h2>
+                <h2 class="sidebar-title" data-zh="工具栏" data-en="Toolbar">工具栏</h2>
                 <div class="sidebar-controls">
                     <button class="sidebar-lock" id="sidebarLock" title="锁定侧边栏">
                         <i class="fas fa-lock-open"></i>
@@ -75,12 +75,7 @@
                         <span class="menu-text" data-zh="每日清单" data-en="Daily Tasks">每日清单</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a href="#" class="menu-link" data-page="pomodoro">
-                        <i class="fas fa-clock"></i>
-                        <span class="menu-text" data-zh="番茄计时" data-en="Pomodoro Timer">番茄计时</span>
-                    </a>
-                </li>
+
             </ul>
         </nav>
 
@@ -238,86 +233,7 @@
             </section>
                 </div>
 
-                <!-- 番茄计时器页面 -->
-                <div class="page" id="pomodoroPage" data-page="timer" style="display: none;">
-                    <section class="pomodoro-section">
-                        <h2><i class="fas fa-clock"></i> <span data-zh="番茄计时器" data-en="Pomodoro Timer">番茄计时器</span></h2>
-                        
-                        <!-- 计时器主体 -->
-                        <div class="pomodoro-timer">
-                            <div class="timer-circle">
-                                <svg class="progress-ring" width="300" height="300">
-                                    <circle class="progress-ring-circle" cx="150" cy="150" r="140"></circle>
-                                </svg>
-                                <div class="timer-content">
-                                    <div class="timer-display" id="timerDisplay">25:00</div>
-                                    <div class="timer-mode" id="timerMode" data-zh="专注时间" data-en="Focus Time">专注时间</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 控制按钮 -->
-                        <div class="timer-controls">
-                            <button id="startBtn" class="btn btn-primary timer-btn" data-zh="开始" data-en="Start">开始</button>
-                            <button id="pauseBtn" class="btn btn-secondary timer-btn" data-zh="暂停" data-en="Pause" style="display: none;">暂停</button>
-                            <button id="resetBtn" class="btn btn-outline timer-btn" data-zh="重置" data-en="Reset">重置</button>
-                            <button id="settingsBtn" class="btn btn-outline timer-btn" data-zh="设置" data-en="Settings">⚙️</button>
-                        </div>
-                        
-                        <!-- 设置面板 -->
-                        <div class="pomodoro-settings">
-                            <h3><i class="fas fa-cog"></i> <span data-zh="设置" data-en="Settings">设置</span></h3>
-                            <div class="settings-grid">
-                                <div class="setting-item">
-                                    <label data-zh="专注时间" data-en="Focus Time">专注时间</label>
-                                    <input type="number" id="focusTime" value="25" min="1" max="60"> <span data-zh="分钟" data-en="minutes">分钟</span>
-                                </div>
-                                <div class="setting-item">
-                                    <label data-zh="短休息" data-en="Short Break">短休息</label>
-                                    <input type="number" id="shortBreak" value="5" min="1" max="30"> <span data-zh="分钟" data-en="minutes">分钟</span>
-                                </div>
-                                <div class="setting-item">
-                                    <label data-zh="长休息" data-en="Long Break">长休息</label>
-                                    <input type="number" id="longBreak" value="15" min="1" max="60"> <span data-zh="分钟" data-en="minutes">分钟</span>
-                                </div>
-                                <div class="setting-item">
-                                    <label data-zh="长休息间隔" data-en="Long Break Interval">长休息间隔</label>
-                                    <input type="number" id="longBreakInterval" value="4" min="2" max="10"> <span data-zh="个番茄" data-en="pomodoros">个番茄</span>
-                                </div>
-                            </div>
-                            <div class="settings-actions">
-                                <button id="saveSettings" class="btn btn-primary" data-zh="保存设置" data-en="Save Settings">保存设置</button>
-                            </div>
-                        </div>
-                        
-                        <!-- 今日统计 -->
-                        <div class="pomodoro-stats">
-                            <h3><i class="fas fa-chart-bar"></i> <span data-zh="今日统计" data-en="Today's Stats">今日统计</span></h3>
-                            <div class="stats-grid">
-                                <div class="stat-card">
-                                    <div class="stat-value" id="completedPomodoros">0</div>
-                                    <div class="stat-label" data-zh="完成番茄" data-en="Completed">完成番茄</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-value" id="totalFocusTime">0h 0m</div>
-                                    <div class="stat-label" data-zh="专注时间" data-en="Focus Time">专注时间</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-value" id="currentStreak">0</div>
-                                    <div class="stat-label" data-zh="连续天数" data-en="Streak">连续天数</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 历史记录 -->
-                        <div class="pomodoro-history">
-                            <h3><i class="fas fa-history"></i> <span data-zh="历史记录" data-en="History">历史记录</span></h3>
-                            <div class="history-list" id="pomodoroHistory">
-                                <!-- 动态生成历史记录 -->
-                            </div>
-                        </div>
-                    </section>
-                </div>
+
             </main>
         </div>
     </div>
@@ -334,6 +250,9 @@
             <span id="visitorCount">1,234</span>
         </div>
     </div>
+    
+    <!-- 激励文字背景 -->
+    <div class="motivational-text">Fake it until you make it</div>
 
     <script src="script.js"></script>
 </body>
