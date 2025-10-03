@@ -1311,6 +1311,12 @@ function handleCreateGoal() {
     // 更新界面
     renderGoalSelector();
     updateCurrentGoalDisplay();
+    
+    // 启动倒计时
+    startCountdown();
+    
+    // 显示成功通知
+    showNotification(currentLanguage === 'zh' ? '目标创建成功！倒计时已开始' : 'Goal created successfully! Countdown started', 'success');
 }
 
 function clearGoalForm() {
@@ -3044,6 +3050,24 @@ function editGoalInline(goalId) {
     goalCard.innerHTML = `
         <div class="goal-edit-form">
             <div class="edit-field">
+                <label>目标名称:</label>
+                <input type="text" id="edit-title-${goalId}" value="${goal.title}" placeholder="输入目标名称">
+            </div>
+            <div class="edit-field">
+                <label>截止日期:</label>
+                <input type="date" id="edit-deadline-${goalId}" value="${goal.deadline}">
+            </div>
+            <div class="edit-field">
+                <label>类别:</label>
+                <select id="edit-category-${goalId}">
+                    ${Object.entries(PRESET_CATEGORIES).map(([key, cat]) => `
+                        <option value="${key}" ${key === goal.category ? 'selected' : ''}>
+                            ${cat.icon} ${cat.name}
+                        </option>
+                    `).join('')}
+                </select>
+            </div>
+            <div class="edit-field">
                 <label>标签 (用逗号分隔):</label>
                 <input type="text" id="edit-tags-${goalId}" value="${goal.customTags ? goal.customTags.join(', ') : ''}" placeholder="输入标签，用逗号分隔">
             </div>
@@ -3095,9 +3119,32 @@ function saveGoalEdit(goalId) {
     const goal = learningGoals.find(g => g.id === goalId);
     if (!goal) return;
     
+    const titleInput = document.getElementById(`edit-title-${goalId}`);
+    const deadlineInput = document.getElementById(`edit-deadline-${goalId}`);
+    const categorySelect = document.getElementById(`edit-category-${goalId}`);
     const tagsInput = document.getElementById(`edit-tags-${goalId}`);
     const prioritySelect = document.getElementById(`edit-priority-${goalId}`);
     const selectedColor = document.querySelector(`#color-picker-${goalId} .color-option.selected`);
+    
+    // 验证必填字段
+    if (!titleInput.value.trim()) {
+        showNotification('目标名称不能为空！', 'error');
+        return;
+    }
+    
+    if (!deadlineInput.value) {
+        showNotification('请选择截止日期！', 'error');
+        return;
+    }
+    
+    // 更新目标名称
+    goal.title = titleInput.value.trim();
+    
+    // 更新截止日期
+    goal.deadline = deadlineInput.value;
+    
+    // 更新类别
+    goal.category = categorySelect.value;
     
     // 更新标签
     const tagsValue = tagsInput.value.trim();
@@ -3124,6 +3171,9 @@ function saveGoalEdit(goalId) {
     // 重新渲染目标选择器
     renderGoalSelector();
     
+    // 更新当前目标显示
+    updateCurrentGoalDisplay();
+    
     // 更新倒计时显示
     updateCountdown();
     
@@ -3133,6 +3183,63 @@ function saveGoalEdit(goalId) {
 // 取消目标编辑
 function cancelGoalEdit(goalId) {
     renderGoalSelector();
+}
+
+// 显示通知消息
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    
+    // 添加样式
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 6px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+    `;
+    
+    // 根据类型设置背景色
+    switch(type) {
+        case 'success':
+            notification.style.backgroundColor = '#28a745';
+            break;
+        case 'error':
+            notification.style.backgroundColor = '#dc3545';
+            break;
+        case 'warning':
+            notification.style.backgroundColor = '#ffc107';
+            notification.style.color = '#212529';
+            break;
+        default:
+            notification.style.backgroundColor = '#17a2b8';
+    }
+    
+    document.body.appendChild(notification);
+    
+    // 显示动画
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // 自动隐藏
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
 }
 
 
